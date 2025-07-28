@@ -64,6 +64,8 @@ async function addTodo() {
 // Update todo status in Notion
 async function updateTodoStatus(id, newStatus) {
   try {
+    console.log(`Updating todo ${id} to status: ${newStatus}`);
+    
     const response = await fetch(`${API_BASE}/update-status`, {
       method: 'POST',
       headers: {
@@ -76,13 +78,17 @@ async function updateTodoStatus(id, newStatus) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Server response:', response.status, errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
+    const result = await response.json();
+    console.log('Update successful:', result);
     getTodos();
   } catch (error) {
     console.error('Error updating todo status:', error);
-    alert('Failed to update todo. Please try again.');
+    alert(`Failed to update todo: ${error.message}\n\nCheck console for details.`);
   }
 }
 
