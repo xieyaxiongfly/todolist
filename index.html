@@ -23,7 +23,12 @@
     </div>
     <div class="custom-bg">
       <input type="text" id="custom-bg-url" placeholder="Custom image URL..." />
-      <button onclick="setCustomBackground()">Apply</button>
+      <button onclick="setCustomBackground()">Apply URL</button>
+    </div>
+    <div class="upload-bg">
+      <input type="file" id="bg-file-input" accept="image/*" onchange="handleImageUpload()" />
+      <label for="bg-file-input" class="upload-btn">📁 Upload Image</label>
+      <div id="upload-preview"></div>
     </div>
   </div>
   

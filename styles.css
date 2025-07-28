@@ -112,6 +112,7 @@ body.bg-none {
 .custom-bg {
   display: flex;
   gap: 8px;
+  margin-bottom: 15px;
 }
 
 .custom-bg input {
@@ -130,6 +131,88 @@ body.bg-none {
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
+}
+
+/* Upload Background */
+.upload-bg {
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+
+#bg-file-input {
+  display: none;
+}
+
+.upload-btn {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #28a745;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.upload-btn:hover {
+  background: #218838;
+}
+
+#upload-preview {
+  margin-top: 10px;
+}
+
+.preview-container {
+  position: relative;
+  display: inline-block;
+}
+
+.preview-image {
+  width: 60px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 2px solid #ddd;
+}
+
+.preview-actions {
+  margin-top: 5px;
+  display: flex;
+  gap: 5px;
+}
+
+.preview-btn {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.apply-btn {
+  background: #007cba;
+  color: white;
+}
+
+.apply-btn:hover {
+  background: #005a8b;
+}
+
+.remove-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.remove-btn:hover {
+  background: #c82333;
+}
+
+.upload-status {
+  margin-top: 5px;
+  font-size: 11px;
+  color: #666;
 }
 
 /* Add Todo */

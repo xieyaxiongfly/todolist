@@ -264,19 +264,109 @@ function setCustomBackground() {
   if (url) {
     document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${url}') center/cover no-repeat fixed`;
     localStorage.setItem('custom-background', url);
+    localStorage.removeItem('uploaded-background'); // Clear uploaded image
     document.getElementById('settings-panel').classList.remove('show');
+    clearUploadPreview();
   }
+}
+
+// Handle image file upload
+function handleImageUpload() {
+  const fileInput = document.getElementById('bg-file-input');
+  const file = fileInput.files[0];
+  
+  if (!file) return;
+  
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file.');
+    return;
+  }
+  
+  // Validate file size (max 5MB)
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    alert('Image file is too large. Please select a file smaller than 5MB.');
+    return;
+  }
+  
+  // Show loading status
+  showUploadStatus('Processing image...');
+  
+  // Convert to data URL
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    showImagePreview(dataUrl, file.name);
+    showUploadStatus('');
+  };
+  
+  reader.onerror = function() {
+    showUploadStatus('Error reading file. Please try again.');
+  };
+  
+  reader.readAsDataURL(file);
+}
+
+// Show image preview with actions
+function showImagePreview(dataUrl, filename) {
+  const preview = document.getElementById('upload-preview');
+  preview.innerHTML = `
+    <div class="preview-container">
+      <p style="margin: 0 0 5px 0; font-size: 11px; color: #666;">${filename}</p>
+      <img src="${dataUrl}" alt="Preview" class="preview-image" />
+      <div class="preview-actions">
+        <button class="preview-btn apply-btn" onclick="applyUploadedBackground('${dataUrl}')">Apply</button>
+        <button class="preview-btn remove-btn" onclick="clearUploadPreview()">Remove</button>
+      </div>
+    </div>
+  `;
+}
+
+// Apply uploaded background
+function applyUploadedBackground(dataUrl) {
+  document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${dataUrl}') center/cover no-repeat fixed`;
+  localStorage.setItem('uploaded-background', dataUrl);
+  localStorage.removeItem('custom-background'); // Clear URL background
+  localStorage.removeItem('background-preference'); // Clear preset background
+  document.getElementById('settings-panel').classList.remove('show');
+  showUploadStatus('Background applied successfully!');
+  setTimeout(() => showUploadStatus(''), 2000);
+}
+
+// Clear upload preview
+function clearUploadPreview() {
+  document.getElementById('upload-preview').innerHTML = '';
+  document.getElementById('bg-file-input').value = '';
+  showUploadStatus('');
+}
+
+// Show upload status message
+function showUploadStatus(message) {
+  let statusDiv = document.querySelector('.upload-status');
+  if (!statusDiv) {
+    statusDiv = document.createElement('div');
+    statusDiv.className = 'upload-status';
+    document.querySelector('.upload-bg').appendChild(statusDiv);
+  }
+  statusDiv.textContent = message;
 }
 
 // Load saved background preference
 function loadBackgroundPreference() {
   const savedBg = localStorage.getItem('background-preference');
   const customBg = localStorage.getItem('custom-background');
+  const uploadedBg = localStorage.getItem('uploaded-background');
   
-  if (customBg) {
+  if (uploadedBg) {
+    // Prioritize uploaded background
+    document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${uploadedBg}') center/cover no-repeat fixed`;
+  } else if (customBg) {
+    // Custom URL background
     document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${customBg}') center/cover no-repeat fixed`;
     document.getElementById('custom-bg-url').value = customBg;
   } else if (savedBg) {
+    // Preset background
     setBackground(savedBg);
   }
 }
