@@ -18,13 +18,35 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { text } = JSON.parse(event.body);
+    const { properties } = JSON.parse(event.body);
     
-    if (!text || text.trim() === '') {
+    if (!properties || typeof properties !== 'object') {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Text is required' })
+        body: JSON.stringify({ error: 'Properties object is required' })
+      };
+    }
+
+    // Convert form data to Notion properties format
+    const notionProperties = {};
+    
+    Object.entries(properties).forEach(([fieldName, fieldValue]) => {
+      if (fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
+        notionProperties[fieldName] = formatPropertyForNotion(fieldName, fieldValue, properties[fieldName + '_type']);
+      }
+    });
+
+    // Ensure we have at least a title
+    const titleField = Object.keys(notionProperties).find(key => 
+      notionProperties[key].title || notionProperties[key].type === 'title'
+    );
+    
+    if (!titleField) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'At least one title field is required' })
       };
     }
 
@@ -37,24 +59,71 @@ exports.handler = async (event, context) => {
       },
       body: JSON.stringify({
         parent: { database_id: process.env.NOTION_DATABASE_ID },
-        properties: {
-          Name: {
-            title: [
-              {
-                text: {
-                  content: text.trim()
-                }
-              }
-            ]
-          },
-          Status: {
-            select: {
-              name: "To Do"
-            }
-          }
-        }
+        properties: notionProperties
       })
     });
+
+    // Helper function to format values for Notion API
+    function formatPropertyForNotion(fieldName, value, type) {
+      switch (type) {
+        case 'title':
+          return {
+            title: [{ text: { content: value.toString() } }]
+          };
+          
+        case 'rich_text':
+          return {
+            rich_text: [{ text: { content: value.toString() } }]
+          };
+          
+        case 'number':
+          return {
+            number: parseFloat(value) || 0
+          };
+          
+        case 'select':
+          return {
+            select: { name: value.toString() }
+          };
+          
+        case 'multi_select':
+          const values = Array.isArray(value) ? value : [value];
+          return {
+            multi_select: values.map(v => ({ name: v.toString() }))
+          };
+          
+        case 'date':
+          return {
+            date: { start: value.toString() }
+          };
+          
+        case 'checkbox':
+          return {
+            checkbox: Boolean(value)
+          };
+          
+        case 'url':
+          return {
+            url: value.toString()
+          };
+          
+        case 'email':
+          return {
+            email: value.toString()
+          };
+          
+        case 'phone_number':
+          return {
+            phone_number: value.toString()
+          };
+          
+        default:
+          // For unsupported types, try rich_text
+          return {
+            rich_text: [{ text: { content: value.toString() } }]
+          };
+      }
+    }
 
     if (!response.ok) {
       throw new Error(`Notion API error: ${response.status}`);
@@ -62,11 +131,16 @@ exports.handler = async (event, context) => {
 
     const data = await response.json();
     
+    // Extract the title for display
+    const titleProperty = Object.values(data.properties).find(prop => prop.type === 'title');
+    const taskTitle = titleProperty?.title?.[0]?.plain_text || 'Untitled Task';
+    
     const newTodo = {
       id: data.id,
-      text: text.trim(),
+      text: taskTitle,
       completed: false,
-      status: "To Do"
+      status: data.properties.Status?.select?.name || "To Do",
+      created: true // Flag to indicate successful creation
     };
 
     return {

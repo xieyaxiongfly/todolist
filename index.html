@@ -33,8 +33,7 @@
   </div>
   
   <div class="add-todo">
-    <input type="text" id="new-todo" placeholder="Add a new task..." />
-    <button onclick="addTodo()">+ Add Card</button>
+    <button onclick="openAddTaskModal()" class="add-task-btn">+ Add New Task</button>
   </div>
   
   <div class="board">
@@ -71,6 +70,23 @@
       </div>
       <div class="modal-footer">
         <button onclick="closeTaskModal()" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Task Modal -->
+  <div id="add-task-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add New Task</h2>
+        <span class="close-modal" onclick="closeAddTaskModal()">&times;</span>
+      </div>
+      <div class="modal-body" id="add-task-body">
+        <div class="loading">Loading form...</div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeAddTaskModal()" class="btn-secondary">Cancel</button>
+        <button onclick="submitNewTask()" class="btn-primary">Create Task</button>
       </div>
     </div>
   </div>

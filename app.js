@@ -82,33 +82,257 @@ function deleteFromLocalStorage(id) {
   showTemporaryMessage('Task deleted successfully!', 'success');
 }
 
-// Add new todo to Notion
-async function addTodo() {
-  const input = document.getElementById('new-todo');
-  const text = input.value.trim();
+// Add Task Modal Functions
+let databaseSchema = null;
+
+async function openAddTaskModal() {
+  const modal = document.getElementById('add-task-modal');
+  const modalBody = document.getElementById('add-task-body');
   
-  if (text === '') return;
+  // Show modal and loading state
+  modal.classList.add('show');
+  modalBody.innerHTML = '<div class="loading">Loading form fields...</div>';
   
   try {
+    // Get database schema if not cached
+    if (!databaseSchema) {
+      console.log('Fetching database schema...');
+      const response = await fetch(`${API_BASE}/get-database-schema`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      databaseSchema = await response.json();
+      console.log('Database schema loaded:', databaseSchema);
+    }
+    
+    // Generate form
+    generateAddTaskForm(databaseSchema);
+    
+  } catch (error) {
+    console.error('Error loading add task form:', error);
+    modalBody.innerHTML = `
+      <div class="loading" style="color: #dc3545;">
+        Failed to load form: ${error.message}
+        <br><br>
+        <small>Using basic form instead.</small>
+      </div>
+    `;
+    
+    // Fallback to basic form
+    setTimeout(() => generateBasicForm(), 1000);
+  }
+}
+
+function generateAddTaskForm(schema) {
+  const modalBody = document.getElementById('add-task-body');
+  
+  let formHtml = '<form id="add-task-form" class="form-grid">';
+  
+  schema.fields.forEach(field => {
+    formHtml += generateFormField(field);
+  });
+  
+  formHtml += '</form>';
+  
+  modalBody.innerHTML = formHtml;
+}
+
+function generateFormField(field) {
+  let fieldHtml = `<div class="form-field">`;
+  
+  // Label
+  fieldHtml += `<label class="form-label ${field.required ? 'required' : ''}" for="${field.name}">
+    ${field.name}
+  </label>`;
+  
+  // Input based on type
+  switch (field.inputType) {
+    case 'text':
+    case 'email':
+    case 'url':
+    case 'tel':
+    case 'number':
+    case 'date':
+      fieldHtml += `<input 
+        type="${field.inputType}" 
+        id="${field.name}" 
+        name="${field.name}"
+        class="form-input" 
+        placeholder="${field.placeholder || ''}"
+        ${field.required ? 'required' : ''}
+        data-type="${field.type}"
+      />`;
+      break;
+      
+    case 'textarea':
+      fieldHtml += `<textarea 
+        id="${field.name}" 
+        name="${field.name}"
+        class="form-textarea" 
+        placeholder="${field.placeholder || ''}"
+        ${field.required ? 'required' : ''}
+        data-type="${field.type}"
+      ></textarea>`;
+      break;
+      
+    case 'select':
+      fieldHtml += `<select 
+        id="${field.name}" 
+        name="${field.name}"
+        class="form-select"
+        ${field.required ? 'required' : ''}
+        data-type="${field.type}"
+      >`;
+      fieldHtml += `<option value="">Select an option...</option>`;
+      field.options.forEach(option => {
+        fieldHtml += `<option value="${option.name}">${option.name}</option>`;
+      });
+      fieldHtml += `</select>`;
+      break;
+      
+    case 'checkbox':
+      fieldHtml += `<label class="form-checkbox">
+        <input 
+          type="checkbox" 
+          id="${field.name}" 
+          name="${field.name}"
+          data-type="${field.type}"
+        />
+        <span>Yes</span>
+      </label>`;
+      break;
+      
+    default:
+      fieldHtml += `<input 
+        type="text" 
+        id="${field.name}" 
+        name="${field.name}"
+        class="form-input" 
+        placeholder="${field.placeholder || ''}"
+        data-type="${field.type}"
+      />`;
+  }
+  
+  // Help text
+  if (field.help) {
+    fieldHtml += `<div class="form-help">${field.help}</div>`;
+  }
+  
+  fieldHtml += `</div>`;
+  
+  return fieldHtml;
+}
+
+function generateBasicForm() {
+  const modalBody = document.getElementById('add-task-body');
+  modalBody.innerHTML = `
+    <form id="add-task-form" class="form-grid">
+      <div class="form-field">
+        <label class="form-label required" for="task-title">Task Title</label>
+        <input type="text" id="task-title" name="Name" class="form-input" placeholder="Enter task title..." required data-type="title" />
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="task-status">Status</label>
+        <select id="task-status" name="Status" class="form-select" data-type="select">
+          <option value="">Select status...</option>
+          <option value="To Do">To Do</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Done">Done</option>
+          <option value="Blocked">Blocked</option>
+        </select>
+      </div>
+    </form>
+  `;
+}
+
+async function submitNewTask() {
+  const form = document.getElementById('add-task-form');
+  if (!form) return;
+  
+  const formData = new FormData(form);
+  const properties = {};
+  
+  // Collect form data with types
+  for (let [name, value] of formData.entries()) {
+    const field = form.querySelector(`[name="${name}"]`);
+    const type = field?.dataset?.type;
+    
+    if (type === 'checkbox') {
+      properties[name] = field.checked;
+    } else if (value.trim() !== '') {
+      properties[name] = value.trim();
+    }
+    
+    // Store type information for the API
+    if (type) {
+      properties[name + '_type'] = type;
+    }
+  }
+  
+  // Validate required fields
+  const requiredFields = form.querySelectorAll('[required]');
+  let hasErrors = false;
+  
+  requiredFields.forEach(field => {
+    if (!field.value.trim()) {
+      field.style.borderColor = '#dc3545';
+      hasErrors = true;
+    } else {
+      field.style.borderColor = '#ddd';
+    }
+  });
+  
+  if (hasErrors) {
+    showTemporaryMessage('Please fill in all required fields', 'error');
+    return;
+  }
+  
+  try {
+    console.log('Submitting task with properties:', properties);
+    
     const response = await fetch(`${API_BASE}/add-todo`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ properties })
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
-    input.value = '';
-    // Clear cache since we have new data
+    const result = await response.json();
+    console.log('Task created successfully:', result);
+    
+    // Close modal and refresh
+    closeAddTaskModal();
     clearTaskCache();
     getTodos();
+    showTemporaryMessage('Task created successfully!', 'success');
+    
   } catch (error) {
-    console.error('Error adding todo:', error);
-    alert('Failed to add todo. Please try again.');
+    console.error('Error creating task:', error);
+    showTemporaryMessage(`Failed to create task: ${error.message}`, 'error');
+  }
+}
+
+function closeAddTaskModal() {
+  const modal = document.getElementById('add-task-modal');
+  modal.classList.remove('show');
+  
+  // Reset form
+  const form = document.getElementById('add-task-form');
+  if (form) {
+    form.reset();
+    // Reset field styles
+    const fields = form.querySelectorAll('.form-input, .form-select, .form-textarea');
+    fields.forEach(field => {
+      field.style.borderColor = '#ddd';
+    });
   }
 }
 
@@ -520,15 +744,8 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// Add Enter key support for input
+// Initialize app
 document.addEventListener('DOMContentLoaded', function() {
-  const input = document.getElementById('new-todo');
-  input.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      addTodo();
-    }
-  });
-  
   // Load background preference
   loadBackgroundPreference();
 });
@@ -715,18 +932,31 @@ function closeTaskModal() {
   modal.classList.remove('show');
 }
 
-// Close modal when clicking outside
+// Close modals when clicking outside
 document.addEventListener('click', function(e) {
-  const modal = document.getElementById('task-modal');
-  if (e.target === modal) {
+  const taskModal = document.getElementById('task-modal');
+  const addTaskModal = document.getElementById('add-task-modal');
+  
+  if (e.target === taskModal) {
     closeTaskModal();
+  }
+  if (e.target === addTaskModal) {
+    closeAddTaskModal();
   }
 });
 
-// Close modal with Escape key
+// Close modals with Escape key
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    closeTaskModal();
+    const taskModal = document.getElementById('task-modal');
+    const addTaskModal = document.getElementById('add-task-modal');
+    
+    if (taskModal.classList.contains('show')) {
+      closeTaskModal();
+    }
+    if (addTaskModal.classList.contains('show')) {
+      closeAddTaskModal();
+    }
   }
 });
 
