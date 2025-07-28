@@ -329,6 +329,15 @@ body.bg-none {
   color: #172b4d;
   font-size: 14px;
   line-height: 1.4;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.card-text:hover {
+  background-color: rgba(0,124,186,0.1);
+  color: #0052cc;
 }
 
 .delete-btn {

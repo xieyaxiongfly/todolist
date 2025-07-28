@@ -254,10 +254,18 @@ function createTodoCard(todo) {
   
   card.innerHTML = `
     <div class="card-content">
-      <span class="card-text" onclick="event.stopPropagation(); openTaskDetails('${todo.id}', '${escapeHtml(todo.text)}')">${todo.text}</span>
+      <span class="card-text" onclick="event.stopPropagation(); openTaskDetails('${todo.id}', '${escapeHtml(todo.text)}'); console.log('Card clicked:', '${todo.id}')">${todo.text}</span>
       <button onclick="event.stopPropagation(); deleteTodo('${todo.id}')" class="delete-btn">×</button>
     </div>
   `;
+  
+  // Add click event as backup
+  const cardText = card.querySelector('.card-text');
+  cardText.addEventListener('click', function(e) {
+    e.stopPropagation();
+    console.log('Card text clicked via event listener:', todo.id);
+    openTaskDetails(todo.id, todo.text);
+  });
   
   return card;
 }
@@ -489,9 +497,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Task Details Modal Functions
 async function openTaskDetails(taskId, taskTitle) {
+  console.log('Opening task details for:', taskId, taskTitle);
+  
   const modal = document.getElementById('task-modal');
   const modalTitle = document.getElementById('modal-title');
   const modalBody = document.getElementById('modal-body');
+  
+  if (!modal || !modalTitle || !modalBody) {
+    console.error('Modal elements not found');
+    alert('Error: Modal elements not found. Please refresh the page.');
+    return;
+  }
   
   // Show modal and loading state
   modal.classList.add('show');
@@ -500,6 +516,7 @@ async function openTaskDetails(taskId, taskTitle) {
   
   try {
     console.log(`Fetching details for task ${taskId}`);
+    console.log('API_BASE:', API_BASE);
     
     const response = await fetch(`${API_BASE}/get-task-details`, {
       method: 'POST',
@@ -509,9 +526,18 @@ async function openTaskDetails(taskId, taskTitle) {
       body: JSON.stringify({ id: taskId })
     });
 
+    console.log('Response status:', response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Server response:', response.status, errorText);
+      
+      // If function doesn't exist, show basic task info
+      if (response.status === 404) {
+        showBasicTaskInfo(taskId, taskTitle);
+        return;
+      }
+      
       throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
@@ -522,14 +548,38 @@ async function openTaskDetails(taskId, taskTitle) {
     
   } catch (error) {
     console.error('Error fetching task details:', error);
-    modalBody.innerHTML = `
-      <div class="loading" style="color: #dc3545;">
-        Failed to load task details: ${error.message}
-        <br><br>
-        <small>This might happen if the task was created locally or if there's a connection issue.</small>
-      </div>
-    `;
+    
+    // Fallback to basic info if API fails
+    showBasicTaskInfo(taskId, taskTitle, error.message);
   }
+}
+
+// Fallback function to show basic task info when API is unavailable
+function showBasicTaskInfo(taskId, taskTitle, errorMessage) {
+  const modalBody = document.getElementById('modal-body');
+  
+  modalBody.innerHTML = `
+    <div class="property-grid">
+      <div class="property-item title">
+        <div class="property-label">Task Name</div>
+        <div class="property-value">${taskTitle}</div>
+      </div>
+      <div class="property-item">
+        <div class="property-label">Task ID</div>
+        <div class="property-value" style="font-family: monospace; font-size: 12px;">${taskId}</div>
+      </div>
+    </div>
+    
+    <div class="metadata-section">
+      <div class="metadata-title">Note</div>
+      <div style="padding: 12px; background: #fff3cd; border-radius: 8px; color: #856404; border-left: 3px solid #ffeb3b;">
+        <strong>Limited Details Available</strong><br>
+        ${errorMessage ? `Error: ${errorMessage}<br><br>` : ''}
+        The task details function may not be deployed yet, or there might be a connection issue. 
+        Basic information is shown instead.
+      </div>
+    </div>
+  `;
 }
 
 // Display task details in the modal
