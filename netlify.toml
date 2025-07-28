@@ -1,0 +1,11 @@
+[build]
+  functions = "netlify/functions"
+
+[dev]
+  command = "python3 -m http.server 8000"
+  targetPort = 8000
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
