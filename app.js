@@ -33,6 +33,15 @@ function loadFromLocalStorage() {
   }
 }
 
+// Delete from localStorage (fallback)
+function deleteFromLocalStorage(id) {
+  const todos = JSON.parse(localStorage.getItem('todos')) || [];
+  const filteredTodos = todos.filter(todo => todo.id !== id);
+  localStorage.setItem('todos', JSON.stringify(filteredTodos));
+  displayTodos(filteredTodos);
+  showTemporaryMessage('Task deleted successfully!', 'success');
+}
+
 // Add new todo to Notion
 async function addTodo() {
   const input = document.getElementById('new-todo');
@@ -92,11 +101,88 @@ async function updateTodoStatus(id, newStatus) {
   }
 }
 
-// Delete todo (mark as done for now)
+// Delete todo permanently
 async function deleteTodo(id) {
-  if (confirm('Are you sure you want to delete this task?')) {
-    await updateTodoStatus(id, 'Done');
+  if (confirm('Are you sure you want to permanently delete this task?')) {
+    try {
+      console.log(`Deleting todo ${id}`);
+      
+      const response = await fetch(`${API_BASE}/delete-todo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: id })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response:', response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Delete successful:', result);
+      
+      // Refresh the todo list
+      getTodos();
+      
+      // Show success message briefly
+      showTemporaryMessage('Task deleted successfully!', 'success');
+      
+    } catch (error) {
+      console.error('Error deleting todo:', error);
+      console.log('Falling back to localStorage deletion');
+      
+      // Fallback to localStorage deletion
+      deleteFromLocalStorage(id);
+    }
   }
+}
+
+// Show temporary message
+function showTemporaryMessage(message, type = 'info') {
+  // Remove existing message if any
+  const existingMessage = document.querySelector('.temp-message');
+  if (existingMessage) {
+    existingMessage.remove();
+  }
+  
+  // Create message element
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `temp-message temp-message-${type}`;
+  messageDiv.textContent = message;
+  messageDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 10000;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  `;
+  
+  // Set background color based on type
+  if (type === 'success') {
+    messageDiv.style.background = '#28a745';
+  } else if (type === 'error') {
+    messageDiv.style.background = '#dc3545';
+  } else {
+    messageDiv.style.background = '#007cba';
+  }
+  
+  // Add to page
+  document.body.appendChild(messageDiv);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    messageDiv.style.opacity = '0';
+    messageDiv.style.transform = 'translateX(100%)';
+    setTimeout(() => messageDiv.remove(), 300);
+  }, 3000);
 }
 
 // Display todos in Trello-like columns
