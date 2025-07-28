@@ -12,7 +12,6 @@ async function getTodos() {
     displayTodos(todos);
   } catch (error) {
     console.error('Error fetching todos:', error);
-    // Fallback to localStorage if API fails
     loadFromLocalStorage();
   }
 }
@@ -24,11 +23,10 @@ function loadFromLocalStorage() {
     const todos = JSON.parse(savedTodos);
     displayTodos(todos);
   } else {
-    // Default todos for first time users
     const defaultTodos = [
-      { id: '1', text: "Learn JavaScript", completed: false },
-      { id: '2', text: "Build todo app", completed: true },
-      { id: '3', text: "Deploy to Netlify", completed: false }
+      { id: '1', text: "Learn JavaScript", status: "To Do", completed: false },
+      { id: '2', text: "Build todo app", status: "In Progress", completed: false },
+      { id: '3', text: "Deploy to Netlify", status: "Done", completed: true }
     ];
     localStorage.setItem('todos', JSON.stringify(defaultTodos));
     displayTodos(defaultTodos);
@@ -56,7 +54,6 @@ async function addTodo() {
     }
 
     input.value = '';
-    // Refresh the todo list
     getTodos();
   } catch (error) {
     console.error('Error adding todo:', error);
@@ -64,22 +61,17 @@ async function addTodo() {
   }
 }
 
-// Toggle todo completion in Notion
-async function toggleTodo(id) {
+// Update todo status in Notion
+async function updateTodoStatus(id, newStatus) {
   try {
-    // First get current state from DOM to determine new state
-    const todoElement = document.querySelector(`[data-id="${id}"]`);
-    const isCurrentlyCompleted = todoElement?.classList.contains('completed') || false;
-    const newCompletedState = !isCurrentlyCompleted;
-
-    const response = await fetch(`${API_BASE}/toggle-todo`, {
+    const response = await fetch(`${API_BASE}/update-status`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
         id: id, 
-        completed: newCompletedState 
+        status: newStatus 
       })
     });
 
@@ -87,48 +79,211 @@ async function toggleTodo(id) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    // Refresh the todo list
     getTodos();
   } catch (error) {
-    console.error('Error toggling todo:', error);
-    alert('Failed to toggle todo. Please try again.');
+    console.error('Error updating todo status:', error);
+    alert('Failed to update todo. Please try again.');
   }
 }
 
-// Delete todo (for now, we'll just toggle it as completed)
+// Delete todo (mark as done for now)
 async function deleteTodo(id) {
-  if (confirm('Are you sure you want to mark this as completed?')) {
-    // Since Notion doesn't easily support deletion, we'll mark as completed
-    await toggleTodo(id);
+  if (confirm('Are you sure you want to delete this task?')) {
+    await updateTodoStatus(id, 'Done');
   }
 }
 
-// Function to display todos on the webpage
+// Display todos in Trello-like columns
 function displayTodos(todos) {
-  const todoListElement = document.getElementById('todo-list');
-  todoListElement.innerHTML = ''; // Clear previous list
+  const columns = {
+    'To Do': document.getElementById('todo-column'),
+    'In Progress': document.getElementById('inprogress-column'),
+    'Done': document.getElementById('done-column'),
+    'Blocked': document.getElementById('blocked-column')
+  };
 
-  if (todos.length === 0) {
-    const emptyItem = document.createElement('li');
-    emptyItem.textContent = 'No tasks yet. Add one above!';
-    emptyItem.className = 'empty';
-    todoListElement.appendChild(emptyItem);
-    return;
-  }
+  // Clear all columns
+  Object.values(columns).forEach(column => {
+    column.innerHTML = '';
+  });
+
+  // Group todos by status
+  const todosByStatus = {
+    'To Do': [],
+    'In Progress': [],
+    'Done': [],
+    'Blocked': []
+  };
 
   todos.forEach(todo => {
-    const listItem = document.createElement('li');
-    listItem.className = todo.completed ? 'completed' : '';
-    listItem.setAttribute('data-id', todo.id);
+    const status = todo.status || 'To Do';
+    if (todosByStatus[status]) {
+      todosByStatus[status].push(todo);
+    } else {
+      todosByStatus['To Do'].push(todo);
+    }
+  });
+
+  // Display todos in their respective columns
+  Object.entries(todosByStatus).forEach(([status, statusTodos]) => {
+    const column = columns[status];
     
-    listItem.innerHTML = `
-      <span onclick="toggleTodo('${todo.id}')" class="todo-text">${todo.text}</span>
+    if (statusTodos.length === 0) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'empty-column';
+      emptyDiv.textContent = 'No tasks here yet';
+      column.appendChild(emptyDiv);
+    } else {
+      statusTodos.forEach(todo => {
+        const card = createTodoCard(todo);
+        column.appendChild(card);
+      });
+    }
+  });
+
+  // Re-initialize drag and drop
+  initializeDragAndDrop();
+}
+
+// Create a todo card element
+function createTodoCard(todo) {
+  const card = document.createElement('li');
+  card.className = 'card';
+  card.draggable = true;
+  card.setAttribute('data-id', todo.id);
+  card.setAttribute('data-status', todo.status || 'To Do');
+  
+  card.innerHTML = `
+    <div class="card-content">
+      <span class="card-text">${todo.text}</span>
       <button onclick="deleteTodo('${todo.id}')" class="delete-btn">×</button>
-    `;
-    
-    todoListElement.appendChild(listItem);
+    </div>
+  `;
+  
+  return card;
+}
+
+// Initialize drag and drop functionality
+function initializeDragAndDrop() {
+  const cards = document.querySelectorAll('.card');
+  const columns = document.querySelectorAll('.card-list');
+
+  cards.forEach(card => {
+    card.addEventListener('dragstart', handleDragStart);
+    card.addEventListener('dragend', handleDragEnd);
+  });
+
+  columns.forEach(column => {
+    column.addEventListener('dragover', handleDragOver);
+    column.addEventListener('drop', handleDrop);
+    column.addEventListener('dragenter', handleDragEnter);
+    column.addEventListener('dragleave', handleDragLeave);
   });
 }
+
+let draggedElement = null;
+
+function handleDragStart(e) {
+  draggedElement = this;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/html', this.outerHTML);
+}
+
+function handleDragEnd(e) {
+  this.classList.remove('dragging');
+  draggedElement = null;
+}
+
+function handleDragOver(e) {
+  if (e.preventDefault) {
+    e.preventDefault();
+  }
+  e.dataTransfer.dropEffect = 'move';
+  return false;
+}
+
+function handleDragEnter(e) {
+  this.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  if (e.stopPropagation) {
+    e.stopPropagation();
+  }
+
+  this.classList.remove('drag-over');
+
+  if (draggedElement !== this) {
+    const newStatus = this.closest('.column').getAttribute('data-status');
+    const todoId = draggedElement.getAttribute('data-id');
+    
+    // Update status in Notion
+    updateTodoStatus(todoId, newStatus);
+  }
+
+  return false;
+}
+
+// Background settings functions
+function toggleSettings() {
+  const panel = document.getElementById('settings-panel');
+  panel.classList.toggle('show');
+}
+
+function setBackground(type) {
+  const body = document.body;
+  
+  // Remove all background classes
+  body.className = body.className.replace(/bg-\w+/g, '');
+  
+  // Add new background class
+  if (type !== 'none') {
+    body.classList.add(`bg-${type}`);
+  }
+  
+  // Save preference
+  localStorage.setItem('background-preference', type);
+  
+  // Close settings panel
+  document.getElementById('settings-panel').classList.remove('show');
+}
+
+function setCustomBackground() {
+  const url = document.getElementById('custom-bg-url').value.trim();
+  if (url) {
+    document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${url}') center/cover no-repeat fixed`;
+    localStorage.setItem('custom-background', url);
+    document.getElementById('settings-panel').classList.remove('show');
+  }
+}
+
+// Load saved background preference
+function loadBackgroundPreference() {
+  const savedBg = localStorage.getItem('background-preference');
+  const customBg = localStorage.getItem('custom-background');
+  
+  if (customBg) {
+    document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${customBg}') center/cover no-repeat fixed`;
+    document.getElementById('custom-bg-url').value = customBg;
+  } else if (savedBg) {
+    setBackground(savedBg);
+  }
+}
+
+// Close settings panel when clicking outside
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('settings-panel');
+  const settingsBtn = document.querySelector('.settings-btn');
+  
+  if (!panel.contains(e.target) && !settingsBtn.contains(e.target)) {
+    panel.classList.remove('show');
+  }
+});
 
 // Add Enter key support for input
 document.addEventListener('DOMContentLoaded', function() {
@@ -138,6 +293,9 @@ document.addEventListener('DOMContentLoaded', function() {
       addTodo();
     }
   });
+  
+  // Load background preference
+  loadBackgroundPreference();
 });
 
 // Run the function when the page loads

@@ -6,16 +6,53 @@
   <title>My Custom To-Do List</title>
   <link rel="stylesheet" href="styles.css"> </head>
 <body>
-  <h1>My To-Do List</h1>
+  <div class="header">
+    <h1>My Trello Board</h1>
+    <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+  </div>
+
+  <div class="settings-panel" id="settings-panel">
+    <h3>Background Settings</h3>
+    <div class="background-options">
+      <button onclick="setBackground('none')">Default</button>
+      <button onclick="setBackground('gradient1')">Blue Gradient</button>
+      <button onclick="setBackground('gradient2')">Purple Gradient</button>
+      <button onclick="setBackground('gradient3')">Ocean</button>
+      <button onclick="setBackground('image1')">Mountain</button>
+      <button onclick="setBackground('image2')">City</button>
+    </div>
+    <div class="custom-bg">
+      <input type="text" id="custom-bg-url" placeholder="Custom image URL..." />
+      <button onclick="setCustomBackground()">Apply</button>
+    </div>
+  </div>
   
   <div class="add-todo">
     <input type="text" id="new-todo" placeholder="Add a new task..." />
-    <button onclick="addTodo()">Add</button>
+    <button onclick="addTodo()">+ Add Card</button>
   </div>
   
-  <ul id="todo-list">
-    <li>Loading tasks...</li>
-  </ul>
+  <div class="board">
+    <div class="column" data-status="To Do">
+      <h2>📋 To Do</h2>
+      <ul class="card-list" id="todo-column"></ul>
+    </div>
+    
+    <div class="column" data-status="In Progress">
+      <h2>🔄 In Progress</h2>
+      <ul class="card-list" id="inprogress-column"></ul>
+    </div>
+    
+    <div class="column" data-status="Done">
+      <h2>✅ Done</h2>
+      <ul class="card-list" id="done-column"></ul>
+    </div>
+    
+    <div class="column" data-status="Blocked">
+      <h2>🚫 Blocked</h2>
+      <ul class="card-list" id="blocked-column"></ul>
+    </div>
+  </div>
   
   <script src="app.js"></script>
 </body>

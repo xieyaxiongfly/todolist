@@ -26,11 +26,29 @@ exports.handler = async (event, context) => {
     const data = await response.json();
     
     // Transform Notion data to our format
-    const todos = data.results.map(page => ({
-      id: page.id,
-      text: page.properties.Name?.title?.[0]?.plain_text || 'Untitled',
-      completed: page.properties.Done?.checkbox || false
-    }));
+    const todos = data.results.map(page => {
+      // Check for both 'Status' and 'Done' properties for backwards compatibility
+      let completed = false;
+      
+      if (page.properties.Status?.select?.name) {
+        // If Status is a select property, check if it's "Done" or "Completed"
+        const status = page.properties.Status.select.name.toLowerCase();
+        completed = status === 'done' || status === 'completed';
+      } else if (page.properties.Status?.checkbox !== undefined) {
+        // If Status is a checkbox
+        completed = page.properties.Status.checkbox;
+      } else if (page.properties.Done?.checkbox !== undefined) {
+        // Fallback to Done checkbox
+        completed = page.properties.Done.checkbox;
+      }
+
+      return {
+        id: page.id,
+        text: page.properties.Name?.title?.[0]?.plain_text || 'Untitled',
+        completed: completed,
+        status: page.properties.Status?.select?.name || (completed ? 'Done' : 'To Do')
+      };
+    });
 
     return {
       statusCode: 200,

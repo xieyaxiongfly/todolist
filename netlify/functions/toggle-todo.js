@@ -28,6 +28,9 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Determine the new status based on completed state
+    const newStatus = completed ? "Done" : "To Do";
+
     const response = await fetch(`https://api.notion.com/v1/pages/${id}`, {
       method: 'PATCH',
       headers: {
@@ -37,8 +40,10 @@ exports.handler = async (event, context) => {
       },
       body: JSON.stringify({
         properties: {
-          Done: {
-            checkbox: completed
+          Status: {
+            select: {
+              name: newStatus
+            }
           }
         }
       })
