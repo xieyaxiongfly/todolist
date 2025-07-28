@@ -1,6 +1,9 @@
 // Check if we're running locally or on Netlify
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8888/.netlify/functions' : '/.netlify/functions';
 
+// Task details cache for instant access
+let taskDetailsCache = new Map();
+
 // Utility function to escape HTML
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -16,6 +19,10 @@ async function getTodos() {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const todos = await response.json();
+    
+    // Cache task details for instant access
+    cacheTaskDetails(todos);
+    
     displayTodos(todos);
   } catch (error) {
     console.error('Error fetching todos:', error);
@@ -38,6 +45,32 @@ function loadFromLocalStorage() {
     localStorage.setItem('todos', JSON.stringify(defaultTodos));
     displayTodos(defaultTodos);
   }
+}
+
+// Cache task details for instant access
+function cacheTaskDetails(todos) {
+  console.log('Caching task details for', todos.length, 'tasks');
+  taskDetailsCache.clear();
+  
+  todos.forEach(todo => {
+    if (todo.fullDetails) {
+      taskDetailsCache.set(todo.id, todo.fullDetails);
+      console.log(`Cached details for task: ${todo.id}`);
+    }
+  });
+  
+  console.log('Cache size:', taskDetailsCache.size);
+}
+
+// Get cached task details
+function getCachedTaskDetails(taskId) {
+  return taskDetailsCache.get(taskId);
+}
+
+// Clear cache when tasks are updated
+function clearTaskCache() {
+  taskDetailsCache.clear();
+  console.log('Task cache cleared');
 }
 
 // Delete from localStorage (fallback)
@@ -70,6 +103,8 @@ async function addTodo() {
     }
 
     input.value = '';
+    // Clear cache since we have new data
+    clearTaskCache();
     getTodos();
   } catch (error) {
     console.error('Error adding todo:', error);
@@ -101,6 +136,8 @@ async function updateTodoStatus(id, newStatus) {
 
     const result = await response.json();
     console.log('Update successful:', result);
+    // Clear cache since task was updated
+    clearTaskCache();
     getTodos();
   } catch (error) {
     console.error('Error updating todo status:', error);
@@ -131,7 +168,8 @@ async function deleteTodo(id) {
       const result = await response.json();
       console.log('Delete successful:', result);
       
-      // Refresh the todo list
+      // Clear cache and refresh the todo list
+      clearTaskCache();
       getTodos();
       
       // Show success message briefly
@@ -496,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Task Details Modal Functions
-async function openTaskDetails(taskId, taskTitle) {
+function openTaskDetails(taskId, taskTitle) {
   console.log('Opening task details for:', taskId, taskTitle);
   
   const modal = document.getElementById('task-modal');
@@ -509,14 +547,29 @@ async function openTaskDetails(taskId, taskTitle) {
     return;
   }
   
-  // Show modal and loading state
+  // Show modal immediately
   modal.classList.add('show');
   modalTitle.textContent = taskTitle || 'Task Details';
-  modalBody.innerHTML = '<div class="loading">Loading task details...</div>';
   
+  // Try to get cached data first
+  const cachedDetails = getCachedTaskDetails(taskId);
+  
+  if (cachedDetails) {
+    console.log('Using cached data for task:', taskId);
+    displayTaskDetails(cachedDetails);
+  } else {
+    console.log('No cached data found, fetching from API...');
+    modalBody.innerHTML = '<div class="loading">Loading task details...</div>';
+    
+    // Fallback to API if no cached data
+    fetchTaskDetailsFromAPI(taskId, taskTitle, modalBody);
+  }
+}
+
+// Fallback function to fetch from API when cache is empty
+async function fetchTaskDetailsFromAPI(taskId, taskTitle, modalBody) {
   try {
-    console.log(`Fetching details for task ${taskId}`);
-    console.log('API_BASE:', API_BASE);
+    console.log(`Fetching details for task ${taskId} from API`);
     
     const response = await fetch(`${API_BASE}/get-task-details`, {
       method: 'POST',
@@ -526,13 +579,10 @@ async function openTaskDetails(taskId, taskTitle) {
       body: JSON.stringify({ id: taskId })
     });
 
-    console.log('Response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Server response:', response.status, errorText);
       
-      // If function doesn't exist, show basic task info
       if (response.status === 404) {
         showBasicTaskInfo(taskId, taskTitle);
         return;
@@ -542,14 +592,15 @@ async function openTaskDetails(taskId, taskTitle) {
     }
 
     const taskDetails = await response.json();
-    console.log('Task details loaded:', taskDetails);
+    console.log('Task details loaded from API:', taskDetails);
+    
+    // Cache the fetched data for next time
+    taskDetailsCache.set(taskId, taskDetails);
     
     displayTaskDetails(taskDetails);
     
   } catch (error) {
     console.error('Error fetching task details:', error);
-    
-    // Fallback to basic info if API fails
     showBasicTaskInfo(taskId, taskTitle, error.message);
   }
 }
