@@ -3,62 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Custom To-Do List</title>
-  <link rel="stylesheet" href="styles.css"> </head>
+  <title>My Task Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body>
-  <div class="header">
-    <h1>My Trello Board</h1>
-    <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+  <div class="app-container">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h1>📋 Tasks</h1>
+        <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+      </div>
+
+      <!-- Add Task Button -->
+      <button class="add-task-sidebar-btn" onclick="showAddTaskForm()">
+        <span class="icon">+</span>
+        <span class="text">Add Task</span>
+      </button>
+
+      <!-- Search -->
+      <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search tasks..." onkeyup="handleSearch(event)">
+        <span class="search-icon">🔍</span>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="nav-menu">
+        <div class="nav-section">
+          <div class="nav-item active" onclick="switchView('today')" data-view="today">
+            <span class="nav-icon">📅</span>
+            <span class="nav-text">Today</span>
+            <span class="nav-count" id="today-count">0</span>
+          </div>
+          
+          <div class="nav-item" onclick="switchView('upcoming')" data-view="upcoming">
+            <span class="nav-icon">📆</span>
+            <span class="nav-text">Upcoming</span>
+            <span class="nav-count" id="upcoming-count">0</span>
+          </div>
+          
+          <div class="nav-item" onclick="switchView('all')" data-view="all">
+            <span class="nav-icon">📋</span>
+            <span class="nav-text">All Tasks</span>
+            <span class="nav-count" id="all-count">0</span>
+          </div>
+          
+          <div class="nav-item" onclick="switchView('completed')" data-view="completed">
+            <span class="nav-icon">✅</span>
+            <span class="nav-text">Completed</span>
+            <span class="nav-count" id="completed-count">0</span>
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">By Status</div>
+          
+          <div class="nav-item" onclick="switchView('todo')" data-view="todo">
+            <span class="nav-icon">📝</span>
+            <span class="nav-text">To Do</span>
+            <span class="nav-count" id="todo-count">0</span>
+          </div>
+          
+          <div class="nav-item" onclick="switchView('in-progress')" data-view="in-progress">
+            <span class="nav-icon">🔄</span>
+            <span class="nav-text">In Progress</span>
+            <span class="nav-count" id="in-progress-count">0</span>
+          </div>
+          
+          <div class="nav-item" onclick="switchView('blocked')" data-view="blocked">
+            <span class="nav-icon">🚫</span>
+            <span class="nav-text">Blocked</span>
+            <span class="nav-count" id="blocked-count">0</span>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Settings Panel (moved to sidebar) -->
+      <div class="settings-panel" id="settings-panel">
+        <h3>Background Settings</h3>
+        <div class="background-options">
+          <button onclick="setBackground('none')">Default</button>
+          <button onclick="setBackground('gradient1')">Blue</button>
+          <button onclick="setBackground('gradient2')">Purple</button>
+          <button onclick="setBackground('gradient3')">Ocean</button>
+          <button onclick="setBackground('image1')">Mountain</button>
+          <button onclick="setBackground('image2')">City</button>
+        </div>
+        <div class="custom-bg">
+          <input type="text" id="custom-bg-url" placeholder="Custom image URL..." />
+          <button onclick="setCustomBackground()">Apply URL</button>
+        </div>
+        <div class="upload-bg">
+          <input type="file" id="bg-file-input" accept="image/*" onchange="handleImageUpload()" />
+          <label for="bg-file-input" class="upload-btn">📁 Upload Image</label>
+          <div id="upload-preview"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <!-- Header with current view info -->
+      <div class="main-header">
+        <h2 id="view-title">Today</h2>
+        <div class="view-info">
+          <span id="view-subtitle">Tasks due today</span>
+          <span class="task-counter" id="main-task-count">0 tasks</span>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content-area" id="content-area">
+        <!-- This will be dynamically populated based on the selected view -->
+        <div class="loading">Loading tasks...</div>
+      </div>
+
+      <!-- Add Task Form (shown when Add Task is clicked) -->
+      <div class="add-task-panel" id="add-task-panel" style="display: none;">
+        <div class="panel-header">
+          <h3>Add New Task</h3>
+          <button class="close-panel-btn" onclick="hideAddTaskForm()">×</button>
+        </div>
+        <div class="panel-body" id="add-task-form-container">
+          <div class="loading">Loading form...</div>
+        </div>
+        <div class="panel-footer">
+          <button onclick="hideAddTaskForm()" class="btn-secondary">Cancel</button>
+          <button onclick="submitNewTask()" class="btn-primary">Create Task</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="settings-panel" id="settings-panel">
-    <h3>Background Settings</h3>
-    <div class="background-options">
-      <button onclick="setBackground('none')">Default</button>
-      <button onclick="setBackground('gradient1')">Blue Gradient</button>
-      <button onclick="setBackground('gradient2')">Purple Gradient</button>
-      <button onclick="setBackground('gradient3')">Ocean</button>
-      <button onclick="setBackground('image1')">Mountain</button>
-      <button onclick="setBackground('image2')">City</button>
-    </div>
-    <div class="custom-bg">
-      <input type="text" id="custom-bg-url" placeholder="Custom image URL..." />
-      <button onclick="setCustomBackground()">Apply URL</button>
-    </div>
-    <div class="upload-bg">
-      <input type="file" id="bg-file-input" accept="image/*" onchange="handleImageUpload()" />
-      <label for="bg-file-input" class="upload-btn">📁 Upload Image</label>
-      <div id="upload-preview"></div>
-    </div>
-  </div>
-  
-  <div class="add-todo">
-    <button onclick="openAddTaskModal()" class="add-task-btn">+ Add New Task</button>
-  </div>
-  
-  <div class="board">
-    <div class="column" data-status="To Do">
-      <h2>📋 To Do</h2>
-      <ul class="card-list" id="todo-column"></ul>
-    </div>
-    
-    <div class="column" data-status="In Progress">
-      <h2>🔄 In Progress</h2>
-      <ul class="card-list" id="inprogress-column"></ul>
-    </div>
-    
-    <div class="column" data-status="Done">
-      <h2>✅ Done</h2>
-      <ul class="card-list" id="done-column"></ul>
-    </div>
-    
-    <div class="column" data-status="Blocked">
-      <h2>🚫 Blocked</h2>
-      <ul class="card-list" id="blocked-column"></ul>
-    </div>
-  </div>
-  
-  <!-- Task Details Modal -->
+  <!-- Task Details Modal (keep for task details) -->
   <div id="task-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -74,23 +151,6 @@
     </div>
   </div>
 
-  <!-- Add Task Modal -->
-  <div id="add-task-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Add New Task</h2>
-        <span class="close-modal" onclick="closeAddTaskModal()">&times;</span>
-      </div>
-      <div class="modal-body" id="add-task-body">
-        <div class="loading">Loading form...</div>
-      </div>
-      <div class="modal-footer">
-        <button onclick="closeAddTaskModal()" class="btn-secondary">Cancel</button>
-        <button onclick="submitNewTask()" class="btn-primary">Create Task</button>
-      </div>
-    </div>
-  </div>
-  
   <script src="app.js"></script>
 </body>
 </html>

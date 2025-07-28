@@ -4,6 +4,12 @@ const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:88
 // Task details cache for instant access
 let taskDetailsCache = new Map();
 
+// Global state for current view and tasks
+let currentView = 'today';
+let allTasks = [];
+let filteredTasks = [];
+let searchQuery = '';
+
 // Utility function to escape HTML
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -23,7 +29,12 @@ async function getTodos() {
     // Cache task details for instant access
     cacheTaskDetails(todos);
     
-    displayTodos(todos);
+    // Store all tasks globally
+    allTasks = todos;
+    
+    // Update task counts and display current view
+    updateTaskCounts();
+    displayCurrentView();
   } catch (error) {
     console.error('Error fetching todos:', error);
     loadFromLocalStorage();
@@ -35,7 +46,13 @@ function loadFromLocalStorage() {
   const savedTodos = localStorage.getItem('todos');
   if (savedTodos) {
     const todos = JSON.parse(savedTodos);
-    displayTodos(todos);
+    
+    // Store all tasks globally
+    allTasks = todos;
+    
+    // Update task counts and display current view
+    updateTaskCounts();
+    displayCurrentView();
   } else {
     const defaultTodos = [
       { id: '1', text: "Learn JavaScript", status: "To Do", completed: false },
@@ -43,7 +60,13 @@ function loadFromLocalStorage() {
       { id: '3', text: "Deploy to Netlify", status: "Done", completed: true }
     ];
     localStorage.setItem('todos', JSON.stringify(defaultTodos));
-    displayTodos(defaultTodos);
+    
+    // Store all tasks globally
+    allTasks = defaultTodos;
+    
+    // Update task counts and display current view
+    updateTaskCounts();
+    displayCurrentView();
   }
 }
 
@@ -78,21 +101,344 @@ function deleteFromLocalStorage(id) {
   const todos = JSON.parse(localStorage.getItem('todos')) || [];
   const filteredTodos = todos.filter(todo => todo.id !== id);
   localStorage.setItem('todos', JSON.stringify(filteredTodos));
-  displayTodos(filteredTodos);
+  
+  // Update global state
+  allTasks = filteredTodos;
+  updateTaskCounts();
+  displayCurrentView();
+  
   showTemporaryMessage('Task deleted successfully!', 'success');
 }
 
-// Add Task Modal Functions
+// View switching functionality
+function switchView(viewName) {
+  console.log('Switching to view:', viewName);
+  
+  // Update current view
+  currentView = viewName;
+  
+  // Update active navigation item
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  const activeNavItem = document.querySelector(`[data-view="${viewName}"]`);
+  if (activeNavItem) {
+    activeNavItem.classList.add('active');
+  }
+  
+  // Update view title and subtitle
+  updateViewHeader(viewName);
+  
+  // Display filtered tasks
+  displayCurrentView();
+}
+
+// Update view header based on current view
+function updateViewHeader(viewName) {
+  const titleElement = document.getElementById('view-title');
+  const subtitleElement = document.getElementById('view-subtitle');
+  
+  const viewConfig = {
+    'today': {
+      title: 'Today',
+      subtitle: 'Tasks due today'
+    },
+    'upcoming': {
+      title: 'Upcoming',
+      subtitle: 'Tasks due in the next 7 days'
+    },
+    'all': {
+      title: 'All Tasks',
+      subtitle: 'Complete overview of all tasks'
+    },
+    'completed': {
+      title: 'Completed',
+      subtitle: 'Tasks that have been finished'
+    },
+    'todo': {
+      title: 'To Do',
+      subtitle: 'Tasks ready to be started'
+    },
+    'in-progress': {
+      title: 'In Progress',
+      subtitle: 'Tasks currently being worked on'
+    },
+    'blocked': {
+      title: 'Blocked',
+      subtitle: 'Tasks waiting on external dependencies'
+    }
+  };
+  
+  const config = viewConfig[viewName] || { title: 'Tasks', subtitle: 'Task list' };
+  titleElement.textContent = config.title;
+  subtitleElement.textContent = config.subtitle;
+}
+
+// Filter tasks based on current view and search query
+function getFilteredTasks() {
+  let filtered = [...allTasks];
+  
+  // Apply search filter first
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase();
+    filtered = filtered.filter(task => 
+      task.text.toLowerCase().includes(query) ||
+      (task.status || '').toLowerCase().includes(query)
+    );
+  }
+  
+  // Apply view filter
+  switch (currentView) {
+    case 'today':
+      // For now, show all tasks. In a real app, this would filter by due date
+      filtered = filtered.filter(task => {
+        // Show tasks that are not completed and have today's date or no date
+        return !task.completed;
+      });
+      break;
+      
+    case 'upcoming':
+      // For now, show all non-completed tasks. In a real app, this would filter by future dates
+      filtered = filtered.filter(task => !task.completed);
+      break;
+      
+    case 'all':
+      // Show all tasks
+      break;
+      
+    case 'completed':
+      filtered = filtered.filter(task => task.completed || task.status === 'Done');
+      break;
+      
+    case 'todo':
+      filtered = filtered.filter(task => task.status === 'To Do' && !task.completed);
+      break;
+      
+    case 'in-progress':
+      filtered = filtered.filter(task => task.status === 'In Progress');
+      break;
+      
+    case 'blocked':
+      filtered = filtered.filter(task => task.status === 'Blocked');
+      break;
+  }
+  
+  return filtered;
+}
+
+// Display current view with filtered tasks
+function displayCurrentView() {
+  filteredTasks = getFilteredTasks();
+  
+  const contentArea = document.getElementById('content-area');
+  const taskCountElement = document.getElementById('main-task-count');
+  
+  // Update task count
+  const taskCount = filteredTasks.length;
+  taskCountElement.textContent = `${taskCount} ${taskCount === 1 ? 'task' : 'tasks'}`;
+  
+  if (filteredTasks.length === 0) {
+    // Show empty state
+    contentArea.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📝</div>
+        <h3>No tasks found</h3>
+        <p>No tasks match the current view and search criteria.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Display tasks based on current view
+  if (currentView === 'all') {
+    displayBoardView(filteredTasks);
+  } else {
+    displayListView(filteredTasks);
+  }
+}
+
+// Display tasks in list format
+function displayListView(tasks) {
+  const contentArea = document.getElementById('content-area');
+  
+  let html = '<div class="task-list">';
+  
+  tasks.forEach(task => {
+    html += createTaskListItem(task);
+  });
+  
+  html += '</div>';
+  contentArea.innerHTML = html;
+}
+
+// Display tasks in board format (for "All Tasks" view)
+function displayBoardView(tasks) {
+  const contentArea = document.getElementById('content-area');
+  
+  // Group tasks by status
+  const tasksByStatus = {
+    'To Do': [],
+    'In Progress': [],
+    'Done': [],
+    'Blocked': []
+  };
+  
+  tasks.forEach(task => {
+    const status = task.status || 'To Do';
+    if (tasksByStatus[status]) {
+      tasksByStatus[status].push(task);
+    } else {
+      tasksByStatus['To Do'].push(task);
+    }
+  });
+  
+  let html = '<div class="board-view">';
+  
+  Object.entries(tasksByStatus).forEach(([status, statusTasks]) => {
+    html += `
+      <div class="board-column">
+        <h3>
+          <span class="board-column-icon">${getStatusIcon(status)}</span>
+          ${status}
+          <span class="nav-count">${statusTasks.length}</span>
+        </h3>
+        <div class="board-task-list">
+    `;
+    
+    if (statusTasks.length === 0) {
+      html += '<div class="empty-state" style="padding: 20px; font-size: 12px;">No tasks</div>';
+    } else {
+      statusTasks.forEach(task => {
+        html += createBoardTaskItem(task);
+      });
+    }
+    
+    html += '</div></div>';
+  });
+  
+  html += '</div>';
+  contentArea.innerHTML = html;
+}
+
+// Create task list item HTML
+function createTaskListItem(task) {
+  const statusClass = (task.status || 'To Do').toLowerCase().replace(/\s+/g, '-');
+  const completedClass = task.completed || task.status === 'Done' ? ' completed' : '';
+  
+  return `
+    <div class="task-item${completedClass}" onclick="openTaskDetails('${task.id}', '${escapeHtml(task.text)}')">
+      <div class="task-header">
+        <div class="task-title">${task.text}</div>
+        <div class="task-status ${statusClass}">${task.status || 'To Do'}</div>
+      </div>
+      <div class="task-meta">
+        <div class="task-date">
+          <span>📅</span>
+          <span>${new Date().toLocaleDateString()}</span>
+        </div>
+        <div class="task-actions">
+          <button class="action-btn edit-btn" onclick="event.stopPropagation(); openTaskDetails('${task.id}', '${escapeHtml(task.text)}')">
+            ✏️ Edit
+          </button>
+          <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteTodo('${task.id}')">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Create board task item HTML
+function createBoardTaskItem(task) {
+  return `
+    <div class="board-task" onclick="openTaskDetails('${task.id}', '${escapeHtml(task.text)}')">
+      <div class="task-title">${task.text}</div>
+      <div class="task-meta">
+        <span>📅 ${new Date().toLocaleDateString()}</span>
+        <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteTodo('${task.id}')" style="float: right; font-size: 12px; padding: 2px 6px;">
+          ×
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// Get icon for status
+function getStatusIcon(status) {
+  const icons = {
+    'To Do': '📝',
+    'In Progress': '🔄',
+    'Done': '✅',
+    'Blocked': '🚫'
+  };
+  return icons[status] || '📝';
+}
+
+// Update task counts in navigation
+function updateTaskCounts() {
+  const counts = {
+    today: allTasks.filter(task => !task.completed).length, // Simplified for now
+    upcoming: allTasks.filter(task => !task.completed).length, // Simplified for now
+    all: allTasks.length,
+    completed: allTasks.filter(task => task.completed || task.status === 'Done').length,
+    todo: allTasks.filter(task => task.status === 'To Do' && !task.completed).length,
+    'in-progress': allTasks.filter(task => task.status === 'In Progress').length,
+    blocked: allTasks.filter(task => task.status === 'Blocked').length
+  };
+  
+  Object.entries(counts).forEach(([view, count]) => {
+    const countElement = document.getElementById(`${view}-count`);
+    if (countElement) {
+      countElement.textContent = count;
+    }
+  });
+}
+
+// Search functionality
+function handleSearch() {
+  const searchInput = document.getElementById('search-input');
+  searchQuery = searchInput.value.trim();
+  
+  console.log('Searching for:', searchQuery);
+  displayCurrentView();
+}
+
+// Add Task Panel Functions
 let databaseSchema = null;
 
-async function openAddTaskModal() {
-  const modal = document.getElementById('add-task-modal');
-  const modalBody = document.getElementById('add-task-body');
+function showAddTaskForm() {
+  const panel = document.getElementById('add-task-panel');
+  const formContainer = document.getElementById('add-task-form-container');
   
-  // Show modal and loading state
-  modal.classList.add('show');
-  modalBody.innerHTML = '<div class="loading">Loading form fields...</div>';
+  // Show panel and loading state
+  panel.style.display = 'flex';
+  formContainer.innerHTML = '<div class="loading">Loading form fields...</div>';
   
+  // Load form asynchronously
+  loadAddTaskForm();
+}
+
+function hideAddTaskForm() {
+  const panel = document.getElementById('add-task-panel');
+  panel.style.display = 'none';
+  
+  // Reset form
+  const form = document.getElementById('add-task-form');
+  if (form) {
+    form.reset();
+    // Reset field styles
+    const fields = form.querySelectorAll('.form-input, .form-select, .form-textarea');
+    fields.forEach(field => {
+      field.style.borderColor = '';
+    });
+  }
+}
+
+async function loadAddTaskForm() {
+  const formContainer = document.getElementById('add-task-form-container');
+
   try {
     // Get database schema if not cached
     if (!databaseSchema) {
@@ -108,11 +454,11 @@ async function openAddTaskModal() {
     }
     
     // Generate form
-    generateAddTaskForm(databaseSchema);
+    generateAddTaskForm(databaseSchema, formContainer);
     
   } catch (error) {
     console.error('Error loading add task form:', error);
-    modalBody.innerHTML = `
+    formContainer.innerHTML = `
       <div class="loading" style="color: #dc3545;">
         Failed to load form: ${error.message}
         <br><br>
@@ -121,12 +467,11 @@ async function openAddTaskModal() {
     `;
     
     // Fallback to basic form
-    setTimeout(() => generateBasicForm(), 1000);
+    setTimeout(() => generateBasicForm(formContainer), 1000);
   }
 }
 
-function generateAddTaskForm(schema) {
-  const modalBody = document.getElementById('add-task-body');
+function generateAddTaskForm(schema, container) {
   
   let formHtml = '<form id="add-task-form" class="form-grid">';
   
@@ -136,7 +481,7 @@ function generateAddTaskForm(schema) {
   
   formHtml += '</form>';
   
-  modalBody.innerHTML = formHtml;
+  container.innerHTML = formHtml;
 }
 
 function generateFormField(field) {
@@ -225,9 +570,8 @@ function generateFormField(field) {
   return fieldHtml;
 }
 
-function generateBasicForm() {
-  const modalBody = document.getElementById('add-task-body');
-  modalBody.innerHTML = `
+function generateBasicForm(container) {
+  container.innerHTML = `
     <form id="add-task-form" class="form-grid">
       <div class="form-field">
         <label class="form-label required" for="task-title">Task Title</label>
@@ -308,8 +652,8 @@ async function submitNewTask() {
     const result = await response.json();
     console.log('Task created successfully:', result);
     
-    // Close modal and refresh
-    closeAddTaskModal();
+    // Close panel and refresh
+    hideAddTaskForm();
     clearTaskCache();
     getTodos();
     showTemporaryMessage('Task created successfully!', 'success');
@@ -320,21 +664,6 @@ async function submitNewTask() {
   }
 }
 
-function closeAddTaskModal() {
-  const modal = document.getElementById('add-task-modal');
-  modal.classList.remove('show');
-  
-  // Reset form
-  const form = document.getElementById('add-task-form');
-  if (form) {
-    form.reset();
-    // Reset field styles
-    const fields = form.querySelectorAll('.form-input, .form-select, .form-textarea');
-    fields.forEach(field => {
-      field.style.borderColor = '#ddd';
-    });
-  }
-}
 
 // Update todo status in Notion
 async function updateTodoStatus(id, newStatus) {
@@ -454,149 +783,6 @@ function showTemporaryMessage(message, type = 'info') {
   }, 3000);
 }
 
-// Display todos in Trello-like columns
-function displayTodos(todos) {
-  const columns = {
-    'To Do': document.getElementById('todo-column'),
-    'In Progress': document.getElementById('inprogress-column'),
-    'Done': document.getElementById('done-column'),
-    'Blocked': document.getElementById('blocked-column')
-  };
-
-  // Clear all columns
-  Object.values(columns).forEach(column => {
-    column.innerHTML = '';
-  });
-
-  // Group todos by status
-  const todosByStatus = {
-    'To Do': [],
-    'In Progress': [],
-    'Done': [],
-    'Blocked': []
-  };
-
-  todos.forEach(todo => {
-    const status = todo.status || 'To Do';
-    if (todosByStatus[status]) {
-      todosByStatus[status].push(todo);
-    } else {
-      todosByStatus['To Do'].push(todo);
-    }
-  });
-
-  // Display todos in their respective columns
-  Object.entries(todosByStatus).forEach(([status, statusTodos]) => {
-    const column = columns[status];
-    
-    if (statusTodos.length === 0) {
-      const emptyDiv = document.createElement('div');
-      emptyDiv.className = 'empty-column';
-      emptyDiv.textContent = 'No tasks here yet';
-      column.appendChild(emptyDiv);
-    } else {
-      statusTodos.forEach(todo => {
-        const card = createTodoCard(todo);
-        column.appendChild(card);
-      });
-    }
-  });
-
-  // Re-initialize drag and drop
-  initializeDragAndDrop();
-}
-
-// Create a todo card element
-function createTodoCard(todo) {
-  const card = document.createElement('li');
-  card.className = 'card';
-  card.draggable = true;
-  card.setAttribute('data-id', todo.id);
-  card.setAttribute('data-status', todo.status || 'To Do');
-  
-  card.innerHTML = `
-    <div class="card-content">
-      <span class="card-text" onclick="event.stopPropagation(); openTaskDetails('${todo.id}', '${escapeHtml(todo.text)}'); console.log('Card clicked:', '${todo.id}')">${todo.text}</span>
-      <button onclick="event.stopPropagation(); deleteTodo('${todo.id}')" class="delete-btn">×</button>
-    </div>
-  `;
-  
-  // Add click event as backup
-  const cardText = card.querySelector('.card-text');
-  cardText.addEventListener('click', function(e) {
-    e.stopPropagation();
-    console.log('Card text clicked via event listener:', todo.id);
-    openTaskDetails(todo.id, todo.text);
-  });
-  
-  return card;
-}
-
-// Initialize drag and drop functionality
-function initializeDragAndDrop() {
-  const cards = document.querySelectorAll('.card');
-  const columns = document.querySelectorAll('.card-list');
-
-  cards.forEach(card => {
-    card.addEventListener('dragstart', handleDragStart);
-    card.addEventListener('dragend', handleDragEnd);
-  });
-
-  columns.forEach(column => {
-    column.addEventListener('dragover', handleDragOver);
-    column.addEventListener('drop', handleDrop);
-    column.addEventListener('dragenter', handleDragEnter);
-    column.addEventListener('dragleave', handleDragLeave);
-  });
-}
-
-let draggedElement = null;
-
-function handleDragStart(e) {
-  draggedElement = this;
-  this.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/html', this.outerHTML);
-}
-
-function handleDragEnd(e) {
-  this.classList.remove('dragging');
-  draggedElement = null;
-}
-
-function handleDragOver(e) {
-  if (e.preventDefault) {
-    e.preventDefault();
-  }
-  e.dataTransfer.dropEffect = 'move';
-  return false;
-}
-
-function handleDragEnter(e) {
-  this.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-  this.classList.remove('drag-over');
-}
-
-function handleDrop(e) {
-  if (e.stopPropagation) {
-    e.stopPropagation();
-  }
-
-  this.classList.remove('drag-over');
-
-  if (draggedElement !== this) {
-    const newStatus = this.closest('.column').getAttribute('data-status');
-    const todoId = draggedElement.getAttribute('data-id');
-    
-    // Update status in Notion
-    updateTodoStatus(todoId, newStatus);
-  }
-
-  return false;
-}
 
 // Background settings functions
 function toggleSettings() {
@@ -748,6 +934,9 @@ document.addEventListener('click', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
   // Load background preference
   loadBackgroundPreference();
+  
+  // Set initial view
+  switchView('today');
 });
 
 // Task Details Modal Functions
@@ -935,13 +1124,9 @@ function closeTaskModal() {
 // Close modals when clicking outside
 document.addEventListener('click', function(e) {
   const taskModal = document.getElementById('task-modal');
-  const addTaskModal = document.getElementById('add-task-modal');
   
   if (e.target === taskModal) {
     closeTaskModal();
-  }
-  if (e.target === addTaskModal) {
-    closeAddTaskModal();
   }
 });
 
@@ -949,13 +1134,13 @@ document.addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     const taskModal = document.getElementById('task-modal');
-    const addTaskModal = document.getElementById('add-task-modal');
+    const addTaskPanel = document.getElementById('add-task-panel');
     
     if (taskModal.classList.contains('show')) {
       closeTaskModal();
     }
-    if (addTaskModal.classList.contains('show')) {
-      closeAddTaskModal();
+    if (addTaskPanel.style.display === 'flex') {
+      hideAddTaskForm();
     }
   }
 });
