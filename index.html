@@ -82,12 +82,12 @@
       <div class="settings-panel" id="settings-panel">
         <h3>Background Settings</h3>
         <div class="background-options">
-          <button onclick="setBackground('none')">Default</button>
-          <button onclick="setBackground('gradient1')">Blue</button>
-          <button onclick="setBackground('gradient2')">Purple</button>
+          <button onclick="setBackground('gradient1')">Blue Purple</button>
+          <button onclick="setBackground('gradient2')">Pink</button>
           <button onclick="setBackground('gradient3')">Ocean</button>
-          <button onclick="setBackground('image1')">Mountain</button>
-          <button onclick="setBackground('image2')">City</button>
+          <button onclick="setBackground('gradient4')">Mint</button>
+          <button onclick="setBackground('gradient5')">Sunset</button>
+          <button onclick="setBackground('gradient6')">Default</button>
         </div>
         <div class="custom-bg">
           <input type="text" id="custom-bg-url" placeholder="Custom image URL..." />
@@ -146,7 +146,10 @@
         <div class="loading">Loading task details...</div>
       </div>
       <div class="modal-footer">
-        <button onclick="closeTaskModal()" class="btn-secondary">Close</button>
+        <button onclick="editTask()" class="btn-primary" id="edit-task-btn" style="display: none;">✏️ Edit Task</button>
+        <button onclick="saveTaskChanges()" class="btn-primary" id="save-task-btn" style="display: none;">💾 Save Changes</button>
+        <button onclick="cancelTaskEdit()" class="btn-secondary" id="cancel-edit-btn" style="display: none;">Cancel</button>
+        <button onclick="closeTaskModal()" class="btn-secondary" id="close-modal-btn">Close</button>
       </div>
     </div>
   </div>

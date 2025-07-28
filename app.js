@@ -793,16 +793,19 @@ function toggleSettings() {
 function setBackground(type) {
   const body = document.body;
   
-  // Remove all background classes
+  // Remove all background classes and custom styles
   body.className = body.className.replace(/bg-\w+/g, '');
+  body.style.background = '';
   
   // Add new background class
   if (type !== 'none') {
     body.classList.add(`bg-${type}`);
   }
   
-  // Save preference
+  // Save preference and clear others
   localStorage.setItem('background-preference', type);
+  localStorage.removeItem('custom-background');
+  localStorage.removeItem('uploaded-background');
   
   // Close settings panel
   document.getElementById('settings-panel').classList.remove('show');
@@ -1039,19 +1042,24 @@ function showBasicTaskInfo(taskId, taskTitle, errorMessage) {
   `;
 }
 
+// Global variable to store current task details for editing
+let currentTaskDetails = null;
+let isEditingTask = false;
+
 // Display task details in the modal
 function displayTaskDetails(taskDetails) {
+  currentTaskDetails = taskDetails; // Store for editing
   const modalBody = document.getElementById('modal-body');
   
-  let propertiesHtml = '<div class="property-grid">';
+  let propertiesHtml = '<div class="property-grid" id="task-properties">';
   
   // Display all properties dynamically
   Object.entries(taskDetails.properties).forEach(([propertyName, propertyData]) => {
     if (propertyData.displayValue || propertyData.displayValue === false || propertyData.displayValue === 0) {
       propertiesHtml += `
-        <div class="property-item ${propertyData.type}">
+        <div class="property-item ${propertyData.type}" data-property="${propertyName}">
           <div class="property-label">${propertyName}</div>
-          <div class="property-value ${!propertyData.displayValue ? 'empty' : ''}">
+          <div class="property-value ${!propertyData.displayValue ? 'empty' : ''}" id="prop-${propertyName}">
             ${formatPropertyValue(propertyData)}
           </div>
         </div>
@@ -1083,6 +1091,143 @@ function displayTaskDetails(taskDetails) {
   `;
   
   modalBody.innerHTML = propertiesHtml;
+  
+  // Show edit button
+  document.getElementById('edit-task-btn').style.display = 'inline-block';
+  hideEditButtons();
+}
+
+// Show/hide edit buttons
+function showEditButtons() {
+  document.getElementById('edit-task-btn').style.display = 'none';
+  document.getElementById('save-task-btn').style.display = 'inline-block';
+  document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+  document.getElementById('close-modal-btn').style.display = 'none';
+}
+
+function hideEditButtons() {
+  document.getElementById('edit-task-btn').style.display = 'inline-block';
+  document.getElementById('save-task-btn').style.display = 'none';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+  document.getElementById('close-modal-btn').style.display = 'inline-block';
+}
+
+// Edit task functionality
+function editTask() {
+  if (!currentTaskDetails) return;
+  
+  isEditingTask = true;
+  showEditButtons();
+  
+  // Convert property values to editable inputs
+  Object.entries(currentTaskDetails.properties).forEach(([propertyName, propertyData]) => {
+    const propertyElement = document.getElementById(`prop-${propertyName}`);
+    if (!propertyElement) return;
+    
+    const currentValue = propertyData.value || propertyData.displayValue || '';
+    
+    let inputHtml = '';
+    switch (propertyData.type) {
+      case 'title':
+      case 'rich_text':
+        inputHtml = `<input type="text" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
+        break;
+      case 'select':
+        // For select, we'd need the schema to get options, so keep it simple for now
+        inputHtml = `<input type="text" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
+        break;
+      case 'checkbox':
+        const checked = propertyData.value ? 'checked' : '';
+        inputHtml = `<label class="form-checkbox"><input type="checkbox" ${checked} data-property="${propertyName}" data-type="${propertyData.type}"> Yes</label>`;
+        break;
+      case 'number':
+        inputHtml = `<input type="number" class="form-input" value="${currentValue}" data-property="${propertyName}" data-type="${propertyData.type}">`;
+        break;
+      case 'date':
+        const dateValue = propertyData.value ? propertyData.value.split('T')[0] : '';
+        inputHtml = `<input type="date" class="form-input" value="${dateValue}" data-property="${propertyName}" data-type="${propertyData.type}">`;
+        break;
+      case 'url':
+        inputHtml = `<input type="url" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
+        break;
+      case 'email':
+        inputHtml = `<input type="email" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
+        break;
+      default:
+        inputHtml = `<input type="text" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
+    }
+    
+    propertyElement.innerHTML = inputHtml;
+  });
+}
+
+// Save task changes
+async function saveTaskChanges() {
+  if (!currentTaskDetails) return;
+  
+  const properties = {};
+  
+  // Collect all edited values
+  document.querySelectorAll('[data-property]').forEach(input => {
+    const propertyName = input.dataset.property;
+    const propertyType = input.dataset.type;
+    let value;
+    
+    if (input.type === 'checkbox') {
+      value = input.checked;
+    } else {
+      value = input.value.trim();
+    }
+    
+    if (value !== '' || input.type === 'checkbox') {
+      properties[propertyName] = value;
+      properties[propertyName + '_type'] = propertyType;
+    }
+  });
+  
+  try {
+    console.log('Saving task changes:', properties);
+    
+    const response = await fetch(`${API_BASE}/update-task`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        id: currentTaskDetails.id,
+        properties: properties
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('Task updated successfully:', result);
+    
+    // Close modal and refresh
+    closeTaskModal();
+    clearTaskCache();
+    getTodos();
+    showTemporaryMessage('Task updated successfully!', 'success');
+    
+  } catch (error) {
+    console.error('Error updating task:', error);
+    showTemporaryMessage(`Failed to update task: ${error.message}`, 'error');
+  }
+}
+
+// Cancel task edit
+function cancelTaskEdit() {
+  if (!currentTaskDetails) return;
+  
+  isEditingTask = false;
+  hideEditButtons();
+  
+  // Restore original display
+  displayTaskDetails(currentTaskDetails);
 }
 
 // Format property values for display
