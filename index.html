@@ -59,6 +59,22 @@
     </div>
   </div>
   
+  <!-- Task Details Modal -->
+  <div id="task-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Task Details</h2>
+        <span class="close-modal" onclick="closeTaskModal()">&times;</span>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <div class="loading">Loading task details...</div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeTaskModal()" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+  
   <script src="app.js"></script>
 </body>
 </html>

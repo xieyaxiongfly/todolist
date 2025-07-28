@@ -1,6 +1,13 @@
 // Check if we're running locally or on Netlify
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8888/.netlify/functions' : '/.netlify/functions';
 
+// Utility function to escape HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // Load todos from Notion via serverless function
 async function getTodos() {
   try {
@@ -247,8 +254,8 @@ function createTodoCard(todo) {
   
   card.innerHTML = `
     <div class="card-content">
-      <span class="card-text">${todo.text}</span>
-      <button onclick="deleteTodo('${todo.id}')" class="delete-btn">×</button>
+      <span class="card-text" onclick="event.stopPropagation(); openTaskDetails('${todo.id}', '${escapeHtml(todo.text)}')">${todo.text}</span>
+      <button onclick="event.stopPropagation(); deleteTodo('${todo.id}')" class="delete-btn">×</button>
     </div>
   `;
   
@@ -478,6 +485,148 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Load background preference
   loadBackgroundPreference();
+});
+
+// Task Details Modal Functions
+async function openTaskDetails(taskId, taskTitle) {
+  const modal = document.getElementById('task-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const modalBody = document.getElementById('modal-body');
+  
+  // Show modal and loading state
+  modal.classList.add('show');
+  modalTitle.textContent = taskTitle || 'Task Details';
+  modalBody.innerHTML = '<div class="loading">Loading task details...</div>';
+  
+  try {
+    console.log(`Fetching details for task ${taskId}`);
+    
+    const response = await fetch(`${API_BASE}/get-task-details`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id: taskId })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Server response:', response.status, errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+    }
+
+    const taskDetails = await response.json();
+    console.log('Task details loaded:', taskDetails);
+    
+    displayTaskDetails(taskDetails);
+    
+  } catch (error) {
+    console.error('Error fetching task details:', error);
+    modalBody.innerHTML = `
+      <div class="loading" style="color: #dc3545;">
+        Failed to load task details: ${error.message}
+        <br><br>
+        <small>This might happen if the task was created locally or if there's a connection issue.</small>
+      </div>
+    `;
+  }
+}
+
+// Display task details in the modal
+function displayTaskDetails(taskDetails) {
+  const modalBody = document.getElementById('modal-body');
+  
+  let propertiesHtml = '<div class="property-grid">';
+  
+  // Display all properties dynamically
+  Object.entries(taskDetails.properties).forEach(([propertyName, propertyData]) => {
+    if (propertyData.displayValue || propertyData.displayValue === false || propertyData.displayValue === 0) {
+      propertiesHtml += `
+        <div class="property-item ${propertyData.type}">
+          <div class="property-label">${propertyName}</div>
+          <div class="property-value ${!propertyData.displayValue ? 'empty' : ''}">
+            ${formatPropertyValue(propertyData)}
+          </div>
+        </div>
+      `;
+    }
+  });
+  
+  propertiesHtml += '</div>';
+  
+  // Add metadata section
+  propertiesHtml += `
+    <div class="metadata-section">
+      <div class="metadata-title">Metadata</div>
+      <div class="property-grid">
+        <div class="property-item">
+          <div class="property-label">Created</div>
+          <div class="property-value">${new Date(taskDetails.created_time).toLocaleString()}</div>
+        </div>
+        <div class="property-item">
+          <div class="property-label">Last Edited</div>
+          <div class="property-value">${new Date(taskDetails.last_edited_time).toLocaleString()}</div>
+        </div>
+        <div class="property-item">
+          <div class="property-label">Task ID</div>
+          <div class="property-value" style="font-family: monospace; font-size: 12px;">${taskDetails.id}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  modalBody.innerHTML = propertiesHtml;
+}
+
+// Format property values for display
+function formatPropertyValue(propertyData) {
+  if (!propertyData.displayValue && propertyData.displayValue !== false && propertyData.displayValue !== 0) {
+    return '<em>Empty</em>';
+  }
+  
+  // Handle URLs
+  if (propertyData.type === 'url' && propertyData.displayValue) {
+    return `<a href="${propertyData.displayValue}" target="_blank" rel="noopener noreferrer">${propertyData.displayValue}</a>`;
+  }
+  
+  // Handle emails
+  if (propertyData.type === 'email' && propertyData.displayValue) {
+    return `<a href="mailto:${propertyData.displayValue}">${propertyData.displayValue}</a>`;
+  }
+  
+  // Handle phone numbers
+  if (propertyData.type === 'phone_number' && propertyData.displayValue) {
+    return `<a href="tel:${propertyData.displayValue}">${propertyData.displayValue}</a>`;
+  }
+  
+  // Handle checkboxes
+  if (propertyData.type === 'checkbox') {
+    return propertyData.value ? '✅ Yes' : '❌ No';
+  }
+  
+  // Default display
+  return propertyData.displayValue;
+}
+
+// Close task details modal
+function closeTaskModal() {
+  const modal = document.getElementById('task-modal');
+  modal.classList.remove('show');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('task-modal');
+  if (e.target === modal) {
+    closeTaskModal();
+  }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeTaskModal();
+  }
 });
 
 // Run the function when the page loads
