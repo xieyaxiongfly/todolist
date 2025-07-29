@@ -231,6 +231,9 @@ function getFilteredTasks() {
 function displayCurrentView() {
   filteredTasks = getFilteredTasks();
   
+  console.log('📊 Displaying current view:', currentView, 'with', filteredTasks.length, 'tasks');
+  console.log('📋 Filtered tasks:', filteredTasks.map(t => ({ id: t.id, text: t.text })));
+  
   const contentArea = document.getElementById('content-area');
   const taskCountElement = document.getElementById('main-task-count');
   
@@ -252,8 +255,10 @@ function displayCurrentView() {
   
   // Display tasks based on current view
   if (currentView === 'all') {
+    console.log('🎯 Displaying board view');
     displayBoardView(filteredTasks);
   } else {
+    console.log('🎯 Displaying list view');
     displayListView(filteredTasks);
   }
 }
@@ -326,8 +331,10 @@ function createTaskListItem(task) {
   const statusClass = (task.status || 'To Do').toLowerCase().replace(/\s+/g, '-');
   const completedClass = task.completed || task.status === 'Done' ? ' completed' : '';
   
+  console.log('🎨 Creating task item for:', { id: task.id, text: task.text });
+  
   return `
-    <div class="task-item${completedClass}" onclick="openTaskDetails('${task.id}', '${escapeHtml(task.text)}')">
+    <div class="task-item${completedClass}" onclick="console.log('🖱️ Task clicked:', '${task.id}'); openTaskDetails('${task.id}', '${escapeHtml(task.text)}');">
       <div class="task-header">
         <div class="task-title">${task.text}</div>
         <div class="task-status ${statusClass}">${task.status || 'To Do'}</div>
@@ -338,7 +345,7 @@ function createTaskListItem(task) {
           <span>${new Date().toLocaleDateString()}</span>
         </div>
         <div class="task-actions">
-          <button class="action-btn edit-btn" onclick="event.stopPropagation(); openTaskDetails('${task.id}', '${escapeHtml(task.text)}')">
+          <button class="action-btn edit-btn" onclick="event.stopPropagation(); console.log('🖱️ Edit clicked:', '${task.id}'); openTaskDetails('${task.id}', '${escapeHtml(task.text)}')">
             ✏️ Edit
           </button>
           <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteTodo('${task.id}')">
@@ -352,8 +359,10 @@ function createTaskListItem(task) {
 
 // Create board task item HTML
 function createBoardTaskItem(task) {
+  console.log('🎨 Creating board task item for:', { id: task.id, text: task.text });
+  
   return `
-    <div class="board-task" onclick="openTaskDetails('${task.id}', '${escapeHtml(task.text)}')">
+    <div class="board-task" onclick="console.log('🖱️ Board task clicked:', '${task.id}'); openTaskDetails('${task.id}', '${escapeHtml(task.text)}');">
       <div class="task-title">${task.text}</div>
       <div class="task-meta">
         <span>📅 ${new Date().toLocaleDateString()}</span>
@@ -944,30 +953,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Task Details Modal Functions
 function openTaskDetails(taskId, taskTitle) {
-  console.log('Opening task details for:', taskId, taskTitle);
+  console.log('🔍 openTaskDetails called with:', { taskId, taskTitle });
   
+  // Check if elements exist
   const modal = document.getElementById('task-modal');
   const modalTitle = document.getElementById('modal-title');
   const modalBody = document.getElementById('modal-body');
   
+  console.log('📋 Modal elements found:', {
+    modal: !!modal,
+    modalTitle: !!modalTitle,
+    modalBody: !!modalBody
+  });
+  
   if (!modal || !modalTitle || !modalBody) {
-    console.error('Modal elements not found');
+    console.error('❌ Modal elements not found');
     alert('Error: Modal elements not found. Please refresh the page.');
     return;
   }
   
   // Show modal immediately
+  console.log('✅ Showing modal...');
   modal.classList.add('show');
   modalTitle.textContent = taskTitle || 'Task Details';
   
   // Try to get cached data first
   const cachedDetails = getCachedTaskDetails(taskId);
+  console.log('💾 Cached details for task:', taskId, !!cachedDetails);
   
   if (cachedDetails) {
-    console.log('Using cached data for task:', taskId);
+    console.log('✅ Using cached data for task:', taskId);
     displayTaskDetails(cachedDetails);
   } else {
-    console.log('No cached data found, fetching from API...');
+    console.log('⚠️ No cached data found, fetching from API...');
     modalBody.innerHTML = '<div class="loading">Loading task details...</div>';
     
     // Fallback to API if no cached data
@@ -1016,7 +1034,14 @@ async function fetchTaskDetailsFromAPI(taskId, taskTitle, modalBody) {
 
 // Fallback function to show basic task info when API is unavailable
 function showBasicTaskInfo(taskId, taskTitle, errorMessage) {
+  console.log('⚠️ Showing basic task info for:', { taskId, taskTitle, errorMessage });
+  
   const modalBody = document.getElementById('modal-body');
+  
+  if (!modalBody) {
+    console.error('❌ Modal body not found in showBasicTaskInfo');
+    return;
+  }
   
   modalBody.innerHTML = `
     <div class="property-grid">
@@ -1040,6 +1065,12 @@ function showBasicTaskInfo(taskId, taskTitle, errorMessage) {
       </div>
     </div>
   `;
+  
+  // Show edit button for basic info too
+  const editBtn = document.getElementById('edit-task-btn');
+  if (editBtn) {
+    editBtn.style.display = 'none'; // Hide edit for basic info
+  }
 }
 
 // Global variable to store current task details for editing
