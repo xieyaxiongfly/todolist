@@ -823,9 +823,14 @@ function setBackground(type) {
 function setCustomBackground() {
   const url = document.getElementById('custom-bg-url').value.trim();
   if (url) {
-    document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${url}') center/cover no-repeat fixed`;
+    // Remove all background classes first
+    document.body.className = document.body.className.replace(/bg-\w+/g, '');
+    
+    // Apply custom background with lighter overlay
+    document.body.style.background = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('${url}') center/cover no-repeat fixed`;
     localStorage.setItem('custom-background', url);
     localStorage.removeItem('uploaded-background'); // Clear uploaded image
+    localStorage.removeItem('background-preference'); // Clear preset background
     document.getElementById('settings-panel').classList.remove('show');
     clearUploadPreview();
   }
@@ -871,14 +876,16 @@ function handleImageUpload() {
 
 // Show image preview with actions
 function showImagePreview(dataUrl, filename) {
+  console.log('🖼️ Showing image preview for:', filename);
+  
   const preview = document.getElementById('upload-preview');
   preview.innerHTML = `
-    <div class="preview-container">
-      <p style="margin: 0 0 5px 0; font-size: 11px; color: #666;">${filename}</p>
-      <img src="${dataUrl}" alt="Preview" class="preview-image" />
-      <div class="preview-actions">
-        <button class="preview-btn apply-btn" onclick="applyUploadedBackground('${dataUrl}')">Apply</button>
-        <button class="preview-btn remove-btn" onclick="clearUploadPreview()">Remove</button>
+    <div class="preview-container" style="margin-top: 8px;">
+      <p style="margin: 0 0 8px 0; font-size: 11px; color: #666; font-weight: 500;">${filename}</p>
+      <img src="${dataUrl}" alt="Preview" style="width: 100%; height: 60px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;" />
+      <div class="preview-actions" style="display: flex; gap: 6px;">
+        <button class="preview-btn apply-btn" onclick="applyUploadedBackground('${dataUrl}')" style="flex: 1; padding: 6px 8px; background: #3182ce; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">✓ Apply</button>
+        <button class="preview-btn remove-btn" onclick="clearUploadPreview()" style="flex: 1; padding: 6px 8px; background: #e2e8f0; color: #4a5568; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">✕ Remove</button>
       </div>
     </div>
   `;
@@ -886,13 +893,28 @@ function showImagePreview(dataUrl, filename) {
 
 // Apply uploaded background
 function applyUploadedBackground(dataUrl) {
-  document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${dataUrl}') center/cover no-repeat fixed`;
+  console.log('🖼️ Applying uploaded background...');
+  
+  // Remove all background classes first
+  document.body.className = document.body.className.replace(/bg-\w+/g, '');
+  
+  // Apply the uploaded image as background
+  document.body.style.background = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('${dataUrl}') center/cover no-repeat fixed`;
+  
+  // Store in localStorage for persistence
   localStorage.setItem('uploaded-background', dataUrl);
   localStorage.removeItem('custom-background'); // Clear URL background
   localStorage.removeItem('background-preference'); // Clear preset background
+  
+  console.log('✅ Uploaded background applied and saved to localStorage');
+  
+  // Close settings and show confirmation
   document.getElementById('settings-panel').classList.remove('show');
   showUploadStatus('Background applied successfully!');
   setTimeout(() => showUploadStatus(''), 2000);
+  
+  // Clear the preview
+  clearUploadPreview();
 }
 
 // Clear upload preview
@@ -915,20 +937,41 @@ function showUploadStatus(message) {
 
 // Load saved background preference
 function loadBackgroundPreference() {
+  console.log('🎨 Loading background preferences...');
+  
   const savedBg = localStorage.getItem('background-preference');
   const customBg = localStorage.getItem('custom-background');
   const uploadedBg = localStorage.getItem('uploaded-background');
   
+  console.log('💾 Background preferences found:', {
+    savedBg,
+    customBg: !!customBg,
+    uploadedBg: !!uploadedBg
+  });
+  
   if (uploadedBg) {
     // Prioritize uploaded background
-    document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${uploadedBg}') center/cover no-repeat fixed`;
+    console.log('✅ Applying uploaded background from localStorage');
+    document.body.className = document.body.className.replace(/bg-\w+/g, '');
+    document.body.style.background = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('${uploadedBg}') center/cover no-repeat fixed`;
   } else if (customBg) {
     // Custom URL background
-    document.body.style.background = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('${customBg}') center/cover no-repeat fixed`;
-    document.getElementById('custom-bg-url').value = customBg;
+    console.log('✅ Applying custom URL background from localStorage');
+    document.body.className = document.body.className.replace(/bg-\w+/g, '');
+    document.body.style.background = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('${customBg}') center/cover no-repeat fixed`;
+    const customBgInput = document.getElementById('custom-bg-url');
+    if (customBgInput) {
+      customBgInput.value = customBg;
+    }
   } else if (savedBg) {
     // Preset background
+    console.log('✅ Applying preset background from localStorage:', savedBg);
     setBackground(savedBg);
+  } else {
+    // Default gradient
+    console.log('✅ Using default gradient background');
+    document.body.className = document.body.className.replace(/bg-\w+/g, '');
+    document.body.classList.add('bg-gradient1');
   }
 }
 
