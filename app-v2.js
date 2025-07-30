@@ -888,13 +888,17 @@ function setupDragAndDropListenersV2() {
     const targetStatus = dropZone.dataset.status;
     console.log('🔧 Setting up drop zone for:', targetStatus);
     
-    dropZone.addEventListener('dragover', handleDragOver);
-    dropZone.addEventListener('dragenter', handleDragEnter);
+    // Add multiple event listeners with proper options
+    dropZone.addEventListener('dragover', handleDragOver, { passive: false });
+    dropZone.addEventListener('dragenter', handleDragEnter, { passive: false });
     dropZone.addEventListener('dragleave', handleDragLeave);
     dropZone.addEventListener('drop', (event) => {
       console.log('🎯 DROP EVENT LISTENER TRIGGERED for status:', targetStatus);
+      event.preventDefault();
+      event.stopPropagation();
       handleTaskDrop(event, targetStatus);
-    });
+      return false;
+    }, { passive: false });
   });
   
   console.log('✅ Drag and drop listeners set up successfully');
@@ -1004,15 +1008,19 @@ function handleTaskDragEnd(event) {
 
 function handleDragOver(event) {
   console.log('🎯 Drag over:', event.target, 'Current target:', event.currentTarget);
-  event.preventDefault();
+  event.preventDefault(); // This is essential for drop to work
+  event.stopPropagation(); // Prevent event bubbling
   event.dataTransfer.dropEffect = 'move';
+  return false; // Extra prevention
 }
 
 function handleDragEnter(event) {
   console.log('🎯 Drag enter:', event.target, 'Current target:', event.currentTarget);
   event.preventDefault();
+  event.stopPropagation();
   // Use currentTarget which is the element with the event listener
   event.currentTarget.classList.add('drop-zone-hover');
+  return false;
 }
 
 function handleDragLeave(event) {
