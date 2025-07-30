@@ -904,6 +904,7 @@ function setupDragAndDropListenersV2() {
   // Add global document listeners as backup
   document.addEventListener('dragover', (event) => {
     const dropZone = event.target.closest('.board-task-list');
+    console.log('🌍 Global dragover - dropZone:', !!dropZone, 'draggedTask:', !!draggedTask);
     if (dropZone && draggedTask) {
       console.log('🌍 Global dragover on:', dropZone.dataset.status);
       event.preventDefault();
@@ -914,10 +915,13 @@ function setupDragAndDropListenersV2() {
   document.addEventListener('drop', (event) => {
     console.log('🌍 GLOBAL DROP EVENT DETECTED');
     const dropZone = event.target.closest('.board-task-list');
+    console.log('🌍 Drop - dropZone:', !!dropZone, 'draggedTask:', !!draggedTask);
     if (dropZone && draggedTask) {
       console.log('🎯 Global drop zone found:', dropZone.dataset.status);
       event.preventDefault();
       handleTaskDrop(event, dropZone.dataset.status);
+    } else {
+      console.log('❌ Drop failed - dropZone:', !!dropZone, 'draggedTask:', draggedTask);
     }
   }, { passive: false });
   
