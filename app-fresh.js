@@ -2066,48 +2066,6 @@ function addSubtask() {
 }
 
 // Edit task functionality for modern modal
-function editTask() {
-  console.log('✏️ Edit task clicked');
-  
-  // Enable all form elements for editing
-  const formElements = [
-    'modal-task-title',
-    'modal-task-details',
-    'modal-task-status',
-    'modal-task-date',
-    'modal-task-priority',
-    'modal-task-estimated-hours',
-    'modal-task-category',
-    'modal-task-tags',
-    'modal-task-location'
-  ];
-  
-  formElements.forEach(id => {
-    const element = document.getElementById(id);
-    if (element) {
-      console.log(`🔧 Enabling editing for ${id}:`, element);
-      element.removeAttribute('readonly');
-      element.removeAttribute('disabled');
-      
-      // Add visual feedback that element is editable
-      element.style.border = '1px solid #63b3ed';
-      element.style.backgroundColor = 'rgba(99, 179, 237, 0.1)';
-    } else {
-      console.warn(`⚠️ Element not found: ${id}`);
-    }
-  });
-  
-  // Show save/cancel buttons, hide edit button
-  const editBtn = document.getElementById('edit-task-btn');
-  const saveBtn = document.getElementById('save-task-btn');
-  const cancelBtn = document.getElementById('cancel-edit-btn');
-  
-  if (editBtn) editBtn.style.display = 'none';
-  if (saveBtn) saveBtn.style.display = 'inline-block';
-  if (cancelBtn) cancelBtn.style.display = 'inline-block';
-  
-  console.log('✅ Edit mode enabled');
-}
 
 // Save task changes
 async function saveTaskChanges() {
@@ -2227,55 +2185,11 @@ async function saveTaskChanges() {
   } catch (error) {
     console.error('Error updating task:', error);
     alert('Failed to update task. Please try again.');
-  } finally {
-    // Reset form styling
-    resetFormStyling();
   }
 }
 
-// Reset form styling after save/cancel
-function resetFormStyling() {
-  const formElements = [
-    'modal-task-title',
-    'modal-task-details',
-    'modal-task-status',
-    'modal-task-date',
-    'modal-task-priority',
-    'modal-task-estimated-hours',
-    'modal-task-category',
-    'modal-task-tags',
-    'modal-task-location'
-  ];
-  
-  formElements.forEach(id => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.style.border = '';
-      element.style.backgroundColor = '';
-      element.setAttribute('readonly', 'true');
-      element.setAttribute('disabled', 'true');
-    }
-  });
-}
 
 // Cancel task editing
-function cancelTaskEdit() {
-  console.log('❌ Cancel edit clicked');
-  
-  // Close modal and reopen to reset form
-  const modal = document.getElementById('task-modal');
-  const taskId = modal.dataset.taskId;
-  
-  closeTaskModal();
-  
-  // Reopen with original data
-  if (taskId) {
-    const cachedDetails = getCachedTaskDetails(taskId);
-    if (cachedDetails) {
-      openTaskDetails(taskId, cachedDetails.properties.Name?.displayValue || 'Task');
-    }
-  }
-}
 
 // Fallback function to fetch from API when cache is empty
 async function fetchTaskDetailsFromAPI(taskId, taskTitle) {
@@ -2407,143 +2321,12 @@ function displayTaskDetails(taskDetails) {
   
   modalBody.innerHTML = propertiesHtml;
   
-  // Show edit button
-  document.getElementById('edit-task-btn').style.display = 'inline-block';
-  hideEditButtons();
 }
 
 // Show/hide edit buttons
-function showEditButtons() {
-  document.getElementById('edit-task-btn').style.display = 'none';
-  document.getElementById('save-task-btn').style.display = 'inline-block';
-  document.getElementById('cancel-edit-btn').style.display = 'inline-block';
-  document.getElementById('close-modal-btn').style.display = 'none';
-}
 
-function hideEditButtons() {
-  document.getElementById('edit-task-btn').style.display = 'inline-block';
-  document.getElementById('save-task-btn').style.display = 'none';
-  document.getElementById('cancel-edit-btn').style.display = 'none';
-  document.getElementById('close-modal-btn').style.display = 'inline-block';
-}
 
-// Edit task functionality
-function editTask() {
-  if (!currentTaskDetails) return;
-  
-  isEditingTask = true;
-  showEditButtons();
-  
-  // Convert property values to editable inputs
-  Object.entries(currentTaskDetails.properties).forEach(([propertyName, propertyData]) => {
-    const propertyElement = document.getElementById(`prop-${propertyName}`);
-    if (!propertyElement) return;
-    
-    const currentValue = propertyData.value || propertyData.displayValue || '';
-    
-    let inputHtml = '';
-    switch (propertyData.type) {
-      case 'title':
-      case 'rich_text':
-        inputHtml = `<input type="text" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
-        break;
-      case 'select':
-        // For select, we'd need the schema to get options, so keep it simple for now
-        inputHtml = `<input type="text" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
-        break;
-      case 'checkbox':
-        const checked = propertyData.value ? 'checked' : '';
-        inputHtml = `<label class="form-checkbox"><input type="checkbox" ${checked} data-property="${propertyName}" data-type="${propertyData.type}"> Yes</label>`;
-        break;
-      case 'number':
-        inputHtml = `<input type="number" class="form-input" value="${currentValue}" data-property="${propertyName}" data-type="${propertyData.type}">`;
-        break;
-      case 'date':
-        const dateValue = propertyData.value ? propertyData.value.split('T')[0] : '';
-        inputHtml = `<input type="date" class="form-input" value="${dateValue}" data-property="${propertyName}" data-type="${propertyData.type}">`;
-        break;
-      case 'url':
-        inputHtml = `<input type="url" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
-        break;
-      case 'email':
-        inputHtml = `<input type="email" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
-        break;
-      default:
-        inputHtml = `<input type="text" class="form-input" value="${escapeHtml(currentValue)}" data-property="${propertyName}" data-type="${propertyData.type}">`;
-    }
-    
-    propertyElement.innerHTML = inputHtml;
-  });
-}
 
-// Save task changes
-async function saveTaskChanges() {
-  if (!currentTaskDetails) return;
-  
-  const properties = {};
-  
-  // Collect all edited values
-  document.querySelectorAll('[data-property]').forEach(input => {
-    const propertyName = input.dataset.property;
-    const propertyType = input.dataset.type;
-    let value;
-    
-    if (input.type === 'checkbox') {
-      value = input.checked;
-    } else {
-      value = input.value.trim();
-    }
-    
-    if (value !== '' || input.type === 'checkbox') {
-      properties[propertyName] = value;
-      properties[propertyName + '_type'] = propertyType;
-    }
-  });
-  
-  try {
-    console.log('Saving task changes:', properties);
-    
-    const response = await fetch(`${API_BASE}/update-task`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        id: currentTaskDetails.id,
-        properties: properties
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-    }
-
-    const result = await response.json();
-    console.log('Task updated successfully:', result);
-    
-    // Close modal and refresh
-    closeTaskModal();
-    clearTaskCache();
-    getTodos();
-    showTemporaryMessage('Task updated successfully!', 'success');
-    
-  } catch (error) {
-    console.error('Error updating task:', error);
-    showTemporaryMessage(`Failed to update task: ${error.message}`, 'error');
-  }
-}
-
-// Cancel task edit
-function cancelTaskEdit() {
-  if (!currentTaskDetails) return;
-  
-  isEditingTask = false;
-  hideEditButtons();
-  
-  // Restore original display
-  displayTaskDetails(currentTaskDetails);
-}
 
 // Format property values for display
 function formatPropertyValue(propertyData) {

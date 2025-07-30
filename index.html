@@ -144,7 +144,7 @@
             <input type="checkbox" id="modal-task-checkbox" onchange="toggleTaskCompletion()">
           </div>
           <div class="task-title-input">
-            <input type="text" id="modal-task-title" class="title-input" readonly>
+            <input type="text" id="modal-task-title" class="title-input">
           </div>
           <button class="close-modal-btn" onclick="closeTaskModal()">×</button>
         </div>
@@ -155,7 +155,7 @@
             <span class="section-icon">📋</span>
             <span class="section-label">Details</span>
           </div>
-          <textarea id="modal-task-details" class="details-textarea" placeholder="Add task details..." readonly></textarea>
+          <textarea id="modal-task-details" class="details-textarea" placeholder="Add task details..."></textarea>
         </div>
 
         <!-- Sub-tasks Section -->
@@ -184,7 +184,7 @@
           <div class="property-label">Status</div>
           <div class="property-value">
             <span class="property-icon">🔄</span>
-            <select id="modal-task-status" class="status-select" disabled>
+            <select id="modal-task-status" class="status-select">
               <option value="">Select Status</option>
               <option value="To Do">📝 To Do</option>
               <option value="In Progress">⚡ In Progress</option>
@@ -208,7 +208,7 @@
           <div class="property-label">Due Date</div>
           <div class="property-value">
             <span class="property-icon">📅</span>
-            <input type="date" id="modal-task-date" class="date-input" readonly>
+            <input type="date" id="modal-task-date" class="date-input">
           </div>
         </div>
 
@@ -217,7 +217,7 @@
           <div class="property-label">Priority</div>
           <div class="property-value">
             <span class="property-icon">⭐</span>
-            <select id="modal-task-priority" class="priority-select" disabled>
+            <select id="modal-task-priority" class="priority-select">
               <option value="">No Priority</option>
               <option value="High">🔴 High</option>
               <option value="Medium">🟡 Medium</option>
@@ -231,7 +231,7 @@
           <div class="property-label">Estimated Hours</div>
           <div class="property-value">
             <span class="property-icon">⏰</span>
-            <input type="number" id="modal-task-estimated-hours" class="number-input" placeholder="0" readonly step="0.5" min="0">
+            <input type="number" id="modal-task-estimated-hours" class="number-input" placeholder="0" step="0.5" min="0">
           </div>
         </div>
 
@@ -240,7 +240,7 @@
           <div class="property-label">Category</div>
           <div class="property-value">
             <span class="property-icon">🏷️</span>
-            <select id="modal-task-category" class="category-select" disabled>
+            <select id="modal-task-category" class="category-select">
               <option value="">No Category</option>
               <option value="Work">💼 Work</option>
               <option value="Personal">👤 Personal</option>
@@ -256,7 +256,7 @@
           <div class="property-label">Tags</div>
           <div class="property-value">
             <span class="property-icon">🏷️</span>
-            <input type="text" id="modal-task-tags" class="tags-input" placeholder="Add tags..." readonly>
+            <input type="text" id="modal-task-tags" class="tags-input" placeholder="Add tags...">
           </div>
         </div>
 
@@ -265,7 +265,7 @@
           <div class="property-label">Location</div>
           <div class="property-value">
             <span class="property-icon">📍</span>
-            <input type="text" id="modal-task-location" class="location-input" placeholder="Add location..." readonly>
+            <input type="text" id="modal-task-location" class="location-input" placeholder="Add location...">
           </div>
         </div>
 
@@ -291,9 +291,7 @@
 
       <!-- Action Buttons -->
       <div class="modal-actions">
-        <button onclick="editTask()" class="btn-edit" id="edit-task-btn">✏️ Edit</button>
-        <button onclick="saveTaskChanges()" class="btn-save" id="save-task-btn" style="display: none;">💾 Save</button>
-        <button onclick="cancelTaskEdit()" class="btn-cancel" id="cancel-edit-btn" style="display: none;">Cancel</button>
+        <button onclick="saveTaskChanges()" class="btn-save" id="save-task-btn">💾 Save</button>
       </div>
     </div>
   </div>
