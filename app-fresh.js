@@ -1681,9 +1681,12 @@ function toggleDarkMode() {
 }
 
 function loadDarkModePreference() {
-  const isDarkMode = localStorage.getItem('dark-mode') === 'true';
+  const darkModePreference = localStorage.getItem('dark-mode');
   const body = document.body;
   const toggle = document.getElementById('dark-mode-toggle');
+  
+  // Default to dark mode if no preference is set, or if preference is true
+  const isDarkMode = darkModePreference === null ? true : darkModePreference === 'true';
   
   if (isDarkMode) {
     body.classList.add('dark-mode');
