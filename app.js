@@ -29,6 +29,28 @@ async function getTodos() {
     // Cache task details for instant access
     cacheTaskDetails(todos);
     
+    // Extract due dates and other properties from fullDetails
+    todos.forEach(task => {
+      if (task.fullDetails && task.fullDetails.properties) {
+        const props = task.fullDetails.properties;
+        
+        // Extract due date from "Due Date" property
+        if (props['Due Date'] && props['Due Date'].value && props['Due Date'].value.start) {
+          task.dueDate = props['Due Date'].value.start;
+        }
+        
+        // Extract priority from "Priority" property
+        if (props['Priority'] && props['Priority'].value && props['Priority'].value.name) {
+          task.priority = props['Priority'].value.name;
+        }
+        
+        // Extract other useful properties
+        if (props['Description'] && props['Description'].displayValue) {
+          task.description = props['Description'].displayValue;
+        }
+      }
+    });
+    
     // Store all tasks globally
     allTasks = todos;
     
@@ -355,15 +377,15 @@ function displayUpcomingTasksGrouped(tasks) {
     <div class="upcoming-filters">
       <button class="filter-btn ${currentFilter === 'day' ? 'active' : ''}" onclick="setUpcomingFilter('day')" data-filter="day">
         <span class="filter-icon">📅</span>
-        <span class="filter-text">Next Day</span>
+        <span class="filter-text">Tomorrow</span>
       </button>
       <button class="filter-btn ${currentFilter === 'week' ? 'active' : ''}" onclick="setUpcomingFilter('week')" data-filter="week">
         <span class="filter-icon">📆</span>
-        <span class="filter-text">Next Week</span>
+        <span class="filter-text">This Week</span>
       </button>
       <button class="filter-btn ${currentFilter === 'month' ? 'active' : ''}" onclick="setUpcomingFilter('month')" data-filter="month">
         <span class="filter-icon">🗓️</span>
-        <span class="filter-text">Next Month</span>
+        <span class="filter-text">This Month</span>
       </button>
     </div>
   `;
@@ -422,13 +444,19 @@ function groupTasksByDate(tasks) {
   let filterEndDate = new Date(today);
   switch (currentFilter) {
     case 'day':
-      filterEndDate.setDate(today.getDate() + 1);
+      // Tomorrow only
+      filterEndDate.setDate(today.getDate() + 2); // Include tomorrow (today + 1 day + 1 for exclusive end)
       break;
     case 'week':
-      filterEndDate.setDate(today.getDate() + 7);
+      // This week (until end of current Sunday)
+      const daysUntilSunday = (7 - today.getDay()) % 7;
+      filterEndDate.setDate(today.getDate() + daysUntilSunday + 1);
       break;
     case 'month':
-      filterEndDate.setMonth(today.getMonth() + 1);
+      // This month (until end of current month)
+      filterEndDate.setMonth(today.getMonth() + 1, 1); // First day of next month
+      filterEndDate.setDate(0); // Last day of current month
+      filterEndDate.setDate(filterEndDate.getDate() + 1); // Make it exclusive
       break;
   }
   
