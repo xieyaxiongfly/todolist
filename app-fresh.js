@@ -903,8 +903,16 @@ function setupDragAndDropListenersV2() {
   
   // Add global document listeners as backup
   document.addEventListener('dragover', (event) => {
-    const dropZone = event.target.closest('.board-task-list');
-    console.log('🌍 Global dragover - dropZone:', !!dropZone, 'draggedTask:', !!draggedTask);
+    // Try multiple ways to find the drop zone
+    let dropZone = event.target.closest('.board-task-list');
+    if (!dropZone) {
+      dropZone = event.currentTarget?.querySelector('.board-task-list');
+    }
+    if (!dropZone && event.target.classList?.contains('board-task-list')) {
+      dropZone = event.target;
+    }
+    
+    console.log('🌍 Global dragover - target:', event.target.className, 'dropZone:', !!dropZone, 'draggedTask:', !!draggedTask);
     if (dropZone && draggedTask) {
       console.log('🌍 Global dragover on:', dropZone.dataset.status);
       event.preventDefault();
@@ -914,8 +922,17 @@ function setupDragAndDropListenersV2() {
   
   document.addEventListener('drop', (event) => {
     console.log('🌍 GLOBAL DROP EVENT DETECTED');
-    const dropZone = event.target.closest('.board-task-list');
-    console.log('🌍 Drop - dropZone:', !!dropZone, 'draggedTask:', !!draggedTask);
+    
+    // Try multiple ways to find the drop zone
+    let dropZone = event.target.closest('.board-task-list');
+    if (!dropZone) {
+      dropZone = event.currentTarget?.querySelector('.board-task-list');
+    }
+    if (!dropZone && event.target.classList?.contains('board-task-list')) {
+      dropZone = event.target;
+    }
+    
+    console.log('🌍 Drop - target:', event.target.className, 'dropZone:', !!dropZone, 'draggedTask:', !!draggedTask);
     if (dropZone && draggedTask) {
       console.log('🎯 Global drop zone found:', dropZone.dataset.status);
       event.preventDefault();
