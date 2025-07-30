@@ -923,22 +923,35 @@ function setupDragAndDropListenersV2() {
   document.addEventListener('drop', (event) => {
     console.log('🌍 GLOBAL DROP EVENT DETECTED');
     
-    // Try multiple ways to find the drop zone
+    // Try multiple ways to find the drop zone and get correct status
     let dropZone = event.target.closest('.board-task-list');
-    if (!dropZone) {
-      dropZone = event.currentTarget?.querySelector('.board-task-list');
-    }
-    if (!dropZone && event.target.classList?.contains('board-task-list')) {
-      dropZone = event.target;
+    let targetStatus = null;
+    
+    // If we found a board-task-list, use its status
+    if (dropZone) {
+      targetStatus = dropZone.dataset.status;
+    } else {
+      // Try to find status from board-column
+      const boardColumn = event.target.closest('.board-column');
+      if (boardColumn) {
+        targetStatus = boardColumn.dataset.status;
+        dropZone = boardColumn.querySelector('.board-task-list');
+      }
     }
     
-    console.log('🌍 Drop - target:', event.target.className, 'dropZone:', !!dropZone, 'draggedTask:', !!draggedTask);
-    if (dropZone && draggedTask) {
-      console.log('🎯 Global drop zone found:', dropZone.dataset.status);
+    // Direct check if target is a board-task-list
+    if (!dropZone && event.target.classList?.contains('board-task-list')) {
+      dropZone = event.target;
+      targetStatus = dropZone.dataset.status;
+    }
+    
+    console.log('🌍 Drop - target:', event.target.className, 'targetStatus:', targetStatus, 'dropZone:', !!dropZone, 'draggedTask:', !!draggedTask);
+    if (dropZone && targetStatus && draggedTask) {
+      console.log('🎯 Global drop zone found:', targetStatus);
       event.preventDefault();
-      handleTaskDrop(event, dropZone.dataset.status);
+      handleTaskDrop(event, targetStatus);
     } else {
-      console.log('❌ Drop failed - dropZone:', !!dropZone, 'draggedTask:', draggedTask);
+      console.log('❌ Drop failed - dropZone:', !!dropZone, 'targetStatus:', targetStatus, 'draggedTask:', draggedTask);
     }
   }, { passive: false });
   
