@@ -373,6 +373,81 @@ body.dark-mode .board-column h3 {
   color: #e2e8f0;
 }
 
+/* Dark mode main header styling */
+body.dark-mode .main-header {
+  background: rgba(26, 32, 44, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode #view-subtitle {
+  color: #a0aec0;
+}
+
+body.dark-mode .task-counter {
+  color: #a0aec0;
+}
+
+/* Dark mode task item styling */
+body.dark-mode .task-item {
+  background: rgba(45, 55, 72, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .task-item:hover {
+  background: rgba(45, 55, 72, 0.95);
+  border-color: rgba(144, 205, 244, 0.5);
+  box-shadow: 0 8px 35px rgba(144, 205, 244, 0.2);
+}
+
+body.dark-mode .task-item.completed {
+  background: rgba(26, 32, 44, 0.6);
+  opacity: 0.7;
+}
+
+body.dark-mode .task-title {
+  color: #e2e8f0;
+}
+
+body.dark-mode .task-item.completed .task-title {
+  color: #a0aec0;
+}
+
+/* Dark mode task status styling */
+body.dark-mode .task-status.to-do {
+  background: rgba(160, 174, 192, 0.2);
+  color: #cbd5e0;
+}
+
+body.dark-mode .task-status.in-progress {
+  background: rgba(245, 101, 101, 0.2);
+  color: #feb2b2;
+}
+
+body.dark-mode .task-status.done {
+  background: rgba(72, 187, 120, 0.2);
+  color: #9ae6b4;
+}
+
+body.dark-mode .task-status.blocked {
+  background: rgba(236, 72, 153, 0.2);
+  color: #f687b3;
+}
+
+/* Dark mode empty state styling */
+body.dark-mode .empty-state {
+  color: #a0aec0;
+}
+
+body.dark-mode .empty-state h3 {
+  color: #e2e8f0;
+}
+
+body.dark-mode .empty-state p {
+  color: #a0aec0;
+}
+
 body.dark-mode .settings-panel {
   background: rgba(255, 255, 255, 0.05);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
