@@ -1728,6 +1728,105 @@ body.dark-mode .calendar-task-more {
   color: #a0aec0;
 }
 
+/* Drag and Drop Styles */
+.board-task[draggable="true"] {
+  cursor: grab;
+  user-select: none;
+}
+
+.board-task[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.board-task.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.board-task-list.drop-zone-active {
+  position: relative;
+  min-height: 60px;
+  transition: all 0.2s ease;
+}
+
+.board-task-list.drop-zone-hover {
+  background: rgba(102, 126, 234, 0.1);
+  border: 2px dashed rgba(102, 126, 234, 0.5);
+  border-radius: 8px;
+}
+
+.board-task-list.drop-zone-active::after {
+  content: 'Drop task here';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(102, 126, 234, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.board-task-list.drop-zone-hover::after {
+  opacity: 1;
+}
+
+/* Dark mode drag and drop styles */
+body.dark-mode .board-task-list.drop-zone-hover {
+  background: rgba(144, 205, 244, 0.1);
+  border-color: rgba(144, 205, 244, 0.5);
+}
+
+body.dark-mode .board-task-list.drop-zone-active::after {
+  color: rgba(144, 205, 244, 0.8);
+}
+
+/* Temporary message animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.temp-message {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced task meta styling */
+.task-due-date {
+  font-size: 11px;
+  color: #718096;
+}
+
+.task-priority {
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+body.dark-mode .task-due-date {
+  color: #a0aec0;
+}
+
 /* Task Details Modal */
 .modal {
   display: none;

@@ -814,13 +814,17 @@ function displayBoardView(tasks) {
   
   Object.entries(tasksByStatus).forEach(([status, statusTasks]) => {
     html += `
-      <div class="board-column">
+      <div class="board-column" data-status="${status}">
         <h3>
           <span class="board-column-icon">${getStatusIcon(status)}</span>
           ${status}
           <span class="nav-count">${statusTasks.length}</span>
         </h3>
-        <div class="board-task-list">
+        <div class="board-task-list" 
+             ondrop="handleTaskDrop(event, '${status}')" 
+             ondragover="handleDragOver(event)"
+             ondragenter="handleDragEnter(event)"
+             ondragleave="handleDragLeave(event)">
     `;
     
     if (statusTasks.length === 0) {
@@ -873,11 +877,21 @@ function createTaskListItem(task) {
 function createBoardTaskItem(task) {
   console.log('🎨 Creating board task item for:', { id: task.id, text: task.text });
   
+  const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No date';
+  const priorityIcon = task.priority === 'High' ? '🔴' : task.priority === 'Medium' ? '🟡' : task.priority === 'Low' ? '🟢' : '';
+  
   return `
-    <div class="board-task" onclick="console.log('🖱️ Board task clicked:', '${task.id}'); openTaskDetails('${task.id}', '${escapeHtml(task.text)}');">
-      <div class="task-title">${task.text}</div>
+    <div class="board-task" 
+         draggable="true" 
+         data-task-id="${task.id}"
+         data-task-status="${task.status || 'To Do'}"
+         ondragstart="handleTaskDragStart(event, '${task.id}', '${task.status || 'To Do'}')"
+         ondragend="handleTaskDragEnd(event)"
+         onclick="console.log('🖱️ Board task clicked:', '${task.id}'); openTaskDetails('${task.id}', '${escapeHtml(task.text)}');">
+      <div class="task-title">${escapeHtml(task.text)}</div>
       <div class="task-meta">
-        <span>📅 ${new Date().toLocaleDateString()}</span>
+        <span class="task-due-date">📅 ${dueDate}</span>
+        ${priorityIcon ? `<span class="task-priority">${priorityIcon}</span>` : ''}
         <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteTodo('${task.id}')" style="float: right; font-size: 12px; padding: 2px 6px;">
           ×
         </button>
@@ -895,6 +909,137 @@ function getStatusIcon(status) {
     'Blocked': '🚫'
   };
   return icons[status] || '📝';
+}
+
+// Drag and Drop functionality
+let draggedTask = null;
+
+function handleTaskDragStart(event, taskId, currentStatus) {
+  console.log('🎯 Drag started for task:', taskId, 'Status:', currentStatus);
+  draggedTask = { id: taskId, status: currentStatus };
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/html', event.target.outerHTML);
+  
+  // Add visual feedback
+  event.target.classList.add('dragging');
+  
+  // Add drop zones visual feedback
+  document.querySelectorAll('.board-task-list').forEach(list => {
+    list.classList.add('drop-zone-active');
+  });
+}
+
+function handleTaskDragEnd(event) {
+  console.log('🎯 Drag ended');
+  event.target.classList.remove('dragging');
+  
+  // Remove drop zones visual feedback
+  document.querySelectorAll('.board-task-list').forEach(list => {
+    list.classList.remove('drop-zone-active', 'drop-zone-hover');
+  });
+  
+  draggedTask = null;
+}
+
+function handleDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+}
+
+function handleDragEnter(event) {
+  event.preventDefault();
+  event.target.classList.add('drop-zone-hover');
+}
+
+function handleDragLeave(event) {
+  event.target.classList.remove('drop-zone-hover');
+}
+
+async function handleTaskDrop(event, targetStatus) {
+  event.preventDefault();
+  event.target.classList.remove('drop-zone-hover');
+  
+  if (!draggedTask) {
+    console.log('❌ No dragged task found');
+    return;
+  }
+  
+  const taskId = draggedTask.id;
+  const oldStatus = draggedTask.status;
+  
+  if (oldStatus === targetStatus) {
+    console.log('ℹ️ Task dropped in same column, no change needed');
+    return;
+  }
+  
+  console.log('🔄 Moving task', taskId, 'from', oldStatus, 'to', targetStatus);
+  
+  try {
+    // Update task status via API
+    const response = await fetch(`${API_BASE}/update-task`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        taskId: taskId,
+        updates: {
+          'Status': targetStatus,
+          'Status_type': 'select'
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ Task status updated successfully:', result);
+    
+    // Update local task data
+    const task = allTasks.find(t => t.id === taskId);
+    if (task) {
+      task.status = targetStatus;
+    }
+    
+    // Refresh the board view
+    displayCurrentView();
+    updateTaskCounts();
+    
+    // Show success feedback
+    showTemporaryMessage(`Task moved to ${targetStatus}`, 'success');
+    
+  } catch (error) {
+    console.error('Error updating task status:', error);
+    showTemporaryMessage('Failed to move task. Please try again.', 'error');
+  }
+}
+
+// Show temporary feedback message
+function showTemporaryMessage(message, type = 'info') {
+  const messageDiv = document.createElement('div');
+  messageDiv.textContent = message;
+  messageDiv.className = `temp-message temp-message-${type}`;
+  messageDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    background: ${type === 'success' ? '#48bb78' : type === 'error' ? '#f56565' : '#4299e1'};
+  `;
+  
+  document.body.appendChild(messageDiv);
+  
+  setTimeout(() => {
+    messageDiv.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => messageDiv.remove(), 300);
+  }, 3000);
 }
 
 // Update task counts in navigation
