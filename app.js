@@ -886,15 +886,16 @@ function createBoardTaskItem(task) {
          data-task-id="${task.id}"
          data-task-status="${task.status || 'To Do'}"
          ondragstart="handleTaskDragStart(event, '${task.id}', '${task.status || 'To Do'}')"
-         ondragend="handleTaskDragEnd(event)"
-         onclick="console.log('🖱️ Board task clicked:', '${task.id}'); openTaskDetails('${task.id}', '${escapeHtml(task.text)}');">
-      <div class="task-title">${escapeHtml(task.text)}</div>
-      <div class="task-meta">
-        <span class="task-due-date">📅 ${dueDate}</span>
-        ${priorityIcon ? `<span class="task-priority">${priorityIcon}</span>` : ''}
-        <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteTodo('${task.id}')" style="float: right; font-size: 12px; padding: 2px 6px;">
-          ×
-        </button>
+         ondragend="handleTaskDragEnd(event)">
+      <div class="task-content" onclick="console.log('🖱️ Board task clicked:', '${task.id}'); openTaskDetails('${task.id}', '${escapeHtml(task.text)}');">
+        <div class="task-title">${escapeHtml(task.text)}</div>
+        <div class="task-meta">
+          <span class="task-due-date">📅 ${dueDate}</span>
+          ${priorityIcon ? `<span class="task-priority">${priorityIcon}</span>` : ''}
+          <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteTodo('${task.id}')" style="float: right; font-size: 12px; padding: 2px 6px;">
+            ×
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -916,6 +917,7 @@ let draggedTask = null;
 
 function handleTaskDragStart(event, taskId, currentStatus) {
   console.log('🎯 Drag started for task:', taskId, 'Status:', currentStatus);
+  console.log('🎯 Event target:', event.target);
   draggedTask = { id: taskId, status: currentStatus };
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/html', event.target.outerHTML);
@@ -924,7 +926,9 @@ function handleTaskDragStart(event, taskId, currentStatus) {
   event.target.classList.add('dragging');
   
   // Add drop zones visual feedback
-  document.querySelectorAll('.board-task-list').forEach(list => {
+  const dropZones = document.querySelectorAll('.board-task-list');
+  console.log('🎯 Found drop zones:', dropZones.length);
+  dropZones.forEach(list => {
     list.classList.add('drop-zone-active');
   });
 }
@@ -956,6 +960,8 @@ function handleDragLeave(event) {
 }
 
 async function handleTaskDrop(event, targetStatus) {
+  console.log('🎯 Drop event triggered for target status:', targetStatus);
+  console.log('🎯 Event target:', event.target);
   event.preventDefault();
   event.target.classList.remove('drop-zone-hover');
   
@@ -966,6 +972,9 @@ async function handleTaskDrop(event, targetStatus) {
   
   const taskId = draggedTask.id;
   const oldStatus = draggedTask.status;
+  
+  console.log('🎯 Dragged task:', draggedTask);
+  console.log('🎯 Target status:', targetStatus);
   
   if (oldStatus === targetStatus) {
     console.log('ℹ️ Task dropped in same column, no change needed');
@@ -982,8 +991,8 @@ async function handleTaskDrop(event, targetStatus) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        taskId: taskId,
-        updates: {
+        id: taskId,
+        properties: {
           'Status': targetStatus,
           'Status_type': 'select'
         }
