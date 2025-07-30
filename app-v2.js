@@ -901,6 +901,26 @@ function setupDragAndDropListenersV2() {
     }, { passive: false });
   });
   
+  // Add global document listeners as backup
+  document.addEventListener('dragover', (event) => {
+    const dropZone = event.target.closest('.board-task-list');
+    if (dropZone && draggedTask) {
+      console.log('🌍 Global dragover on:', dropZone.dataset.status);
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }, { passive: false });
+  
+  document.addEventListener('drop', (event) => {
+    console.log('🌍 GLOBAL DROP EVENT DETECTED');
+    const dropZone = event.target.closest('.board-task-list');
+    if (dropZone && draggedTask) {
+      console.log('🎯 Global drop zone found:', dropZone.dataset.status);
+      event.preventDefault();
+      handleTaskDrop(event, dropZone.dataset.status);
+    }
+  }, { passive: false });
+  
   console.log('✅ Drag and drop listeners set up successfully');
 }
 
