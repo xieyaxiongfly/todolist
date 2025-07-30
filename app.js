@@ -946,16 +946,19 @@ function handleTaskDragEnd(event) {
 }
 
 function handleDragOver(event) {
+  console.log('🎯 Drag over:', event.target);
   event.preventDefault();
   event.dataTransfer.dropEffect = 'move';
 }
 
 function handleDragEnter(event) {
+  console.log('🎯 Drag enter:', event.target);
   event.preventDefault();
   event.target.classList.add('drop-zone-hover');
 }
 
 function handleDragLeave(event) {
+  console.log('🎯 Drag leave:', event.target);
   event.target.classList.remove('drop-zone-hover');
 }
 
