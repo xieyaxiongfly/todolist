@@ -1,5 +1,5 @@
-// JavaScript Version Check - V3 2025-07-30
-console.log('🚀 LOADING JS VERSION 3 - 2025-07-30 🚀');
+// NEW JAVASCRIPT FILE - app-v2.js - FRESH VERSION
+console.log('🚀🚀🚀 LOADING FRESH APP-V2.JS FILE 🚀🚀🚀');
 
 // Check if we're running locally or on Netlify
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8888/.netlify/functions' : '/.netlify/functions';
