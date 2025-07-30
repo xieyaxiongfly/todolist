@@ -182,6 +182,8 @@ function updateViewHeader(viewName) {
 // Filter tasks based on current view and search query
 function getFilteredTasks() {
   let filtered = [...allTasks];
+  const today = new Date();
+  const todayStr = today.toDateString();
   
   // Apply search filter first
   if (searchQuery) {
@@ -195,16 +197,28 @@ function getFilteredTasks() {
   // Apply view filter
   switch (currentView) {
     case 'today':
-      // For now, show all tasks. In a real app, this would filter by due date
       filtered = filtered.filter(task => {
-        // Show tasks that are not completed and have today's date or no date
-        return !task.completed;
+        if (task.completed || task.status === 'Done') return false;
+        
+        // Show tasks due today, overdue tasks, or tasks with no due date
+        if (!task.dueDate) return true; // Tasks without due date show in Today
+        
+        const taskDueDate = new Date(task.dueDate);
+        const taskDueDateStr = taskDueDate.toDateString();
+        
+        // Show today's tasks and overdue tasks
+        return taskDueDateStr === todayStr || taskDueDate < today;
       });
       break;
       
     case 'upcoming':
-      // For now, show all non-completed tasks. In a real app, this would filter by future dates
-      filtered = filtered.filter(task => !task.completed);
+      filtered = filtered.filter(task => {
+        if (task.completed || task.status === 'Done') return false;
+        if (!task.dueDate) return false; // Only show tasks with due dates in upcoming
+        
+        const taskDueDate = new Date(task.dueDate);
+        return taskDueDate > today; // Only future tasks
+      });
       break;
       
     case 'all':
@@ -227,6 +241,43 @@ function getFilteredTasks() {
       filtered = filtered.filter(task => task.status === 'Blocked');
       break;
   }
+  
+  // Sort tasks by due date, then by priority
+  filtered.sort((a, b) => {
+    // Handle tasks without due dates
+    if (!a.dueDate && !b.dueDate) {
+      // Both have no date, sort by priority then alphabetically
+      const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+      const aPriority = priorityOrder[a.priority] !== undefined ? priorityOrder[a.priority] : 3;
+      const bPriority = priorityOrder[b.priority] !== undefined ? priorityOrder[b.priority] : 3;
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      return a.text.localeCompare(b.text);
+    }
+    if (!a.dueDate) return 1; // a has no date, put it after b
+    if (!b.dueDate) return -1; // b has no date, put a before b
+    
+    // Both have due dates, sort by date first (earliest first)
+    const dateA = new Date(a.dueDate);
+    const dateB = new Date(b.dueDate);
+    const dateDiff = dateA - dateB;
+    
+    if (dateDiff !== 0) {
+      return dateDiff; // Different dates, sort by date
+    }
+    
+    // Same date, sort by priority then alphabetically
+    const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+    const aPriority = priorityOrder[a.priority] !== undefined ? priorityOrder[a.priority] : 3;
+    const bPriority = priorityOrder[b.priority] !== undefined ? priorityOrder[b.priority] : 3;
+    
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
+    return a.text.localeCompare(b.text);
+  });
   
   return filtered;
 }
@@ -394,6 +445,23 @@ function groupTasksByDate(tasks) {
       }
       tasksByDate[dueDateKey].push(task);
     }
+  });
+  
+  // Sort tasks within each date group by priority and then by creation time
+  Object.keys(tasksByDate).forEach(dateKey => {
+    tasksByDate[dateKey].sort((a, b) => {
+      // First sort by priority (High > Medium > Low > no priority)
+      const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+      const aPriority = priorityOrder[a.priority] !== undefined ? priorityOrder[a.priority] : 3;
+      const bPriority = priorityOrder[b.priority] !== undefined ? priorityOrder[b.priority] : 3;
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      
+      // If same priority, sort by task name alphabetically
+      return a.text.localeCompare(b.text);
+    });
   });
   
   return tasksByDate;
