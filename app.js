@@ -946,27 +946,29 @@ function handleTaskDragEnd(event) {
 }
 
 function handleDragOver(event) {
-  console.log('🎯 Drag over:', event.target);
+  console.log('🎯 Drag over:', event.target, 'Current target:', event.currentTarget);
   event.preventDefault();
   event.dataTransfer.dropEffect = 'move';
 }
 
 function handleDragEnter(event) {
-  console.log('🎯 Drag enter:', event.target);
+  console.log('🎯 Drag enter:', event.target, 'Current target:', event.currentTarget);
   event.preventDefault();
-  event.target.classList.add('drop-zone-hover');
+  // Use currentTarget which is the element with the event listener
+  event.currentTarget.classList.add('drop-zone-hover');
 }
 
 function handleDragLeave(event) {
-  console.log('🎯 Drag leave:', event.target);
-  event.target.classList.remove('drop-zone-hover');
+  console.log('🎯 Drag leave:', event.target, 'Current target:', event.currentTarget);
+  // Use currentTarget which is the element with the event listener
+  event.currentTarget.classList.remove('drop-zone-hover');
 }
 
 async function handleTaskDrop(event, targetStatus) {
   console.log('🎯 Drop event triggered for target status:', targetStatus);
-  console.log('🎯 Event target:', event.target);
+  console.log('🎯 Event target:', event.target, 'Current target:', event.currentTarget);
   event.preventDefault();
-  event.target.classList.remove('drop-zone-hover');
+  event.currentTarget.classList.remove('drop-zone-hover');
   
   if (!draggedTask) {
     console.log('❌ No dragged task found');
