@@ -892,6 +892,7 @@ function setupDragAndDropListenersV2() {
     dropZone.addEventListener('dragenter', handleDragEnter);
     dropZone.addEventListener('dragleave', handleDragLeave);
     dropZone.addEventListener('drop', (event) => {
+      console.log('🎯 DROP EVENT LISTENER TRIGGERED for status:', targetStatus);
       handleTaskDrop(event, targetStatus);
     });
   });

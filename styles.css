@@ -362,6 +362,19 @@ body.dark-mode .board-task:hover {
   box-shadow: 0 4px 15px rgba(144, 205, 244, 0.2);
 }
 
+/* Dark mode board task v2 styling */
+body.dark-mode .board-task-v2 {
+  background: rgba(45, 55, 72, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+}
+
+body.dark-mode .board-task-v2:hover {
+  background: rgba(45, 55, 72, 0.95);
+  border-color: rgba(144, 205, 244, 0.5);
+  box-shadow: 0 4px 15px rgba(144, 205, 244, 0.2);
+}
+
 /* Dark mode board column styling */
 body.dark-mode .board-column {
   background: rgba(26, 32, 44, 0.8);
@@ -839,6 +852,25 @@ body.dark-mode .toggle-switch input[type="checkbox"]:checked + .toggle-slider {
 }
 
 .board-task:hover {
+  border-color: rgba(102, 126, 234, 0.5);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+/* Board Task V2 - Same styling as board-task */
+.board-task-v2 {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(15px);
+  margin-bottom: 8px;
+}
+
+.board-task-v2:hover {
   border-color: rgba(102, 126, 234, 0.5);
   transform: translateY(-2px);
   background: rgba(255, 255, 255, 0.9);
@@ -1738,11 +1770,18 @@ body.dark-mode .calendar-task-more {
   user-select: none;
 }
 
-.board-task[draggable="true"]:active {
+.board-task-v2[draggable="true"] {
+  cursor: grab;
+  user-select: none;
+}
+
+.board-task[draggable="true"]:active,
+.board-task-v2[draggable="true"]:active {
   cursor: grabbing;
 }
 
-.board-task.dragging {
+.board-task.dragging,
+.board-task-v2.dragging {
   opacity: 0.5;
   transform: rotate(5deg);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
