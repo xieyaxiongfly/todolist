@@ -149,13 +149,15 @@
           <button class="close-modal-btn" onclick="closeTaskModal()">×</button>
         </div>
 
-        <!-- Description Section -->
-        <div class="description-section">
+        <!-- Details Section -->
+        <div class="details-section">
           <div class="section-header">
-            <span class="section-icon">📝</span>
-            <span class="section-label">Description</span>
+            <span class="section-icon">📋</span>
+            <span class="section-label">Details</span>
           </div>
-          <textarea id="modal-task-description" class="description-input" placeholder="Add description..." readonly></textarea>
+          <div id="modal-task-details" class="details-content">
+            <div class="loading">Loading task details...</div>
+          </div>
         </div>
 
         <!-- Sub-tasks Section -->

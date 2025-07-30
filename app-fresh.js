@@ -1933,10 +1933,10 @@ function openTaskDetails(taskId, taskTitle) {
 // Set modal to loading state
 function setModalLoading() {
   const titleInput = document.getElementById('modal-task-title');
-  const descriptionInput = document.getElementById('modal-task-description');
+  const detailsContainer = document.getElementById('modal-task-details');
   
   if (titleInput) titleInput.value = 'Loading...';
-  if (descriptionInput) descriptionInput.value = 'Loading task details...';
+  if (detailsContainer) detailsContainer.innerHTML = '<div class="loading">Loading task details...</div>';
 }
 
 // Display task details in modern modal
@@ -1961,12 +1961,10 @@ function displayModernTaskDetails(taskDetails) {
     checkbox.checked = status === 'Done' || status === 'Completed';
   }
   
-  // Update description
-  const descriptionInput = document.getElementById('modal-task-description');
-  if (descriptionInput) {
-    const description = taskDetails.properties.Description?.displayValue || '';
-    descriptionInput.value = description;
-    descriptionInput.placeholder = 'Add description...';
+  // Update details section with database information
+  const detailsContainer = document.getElementById('modal-task-details');
+  if (detailsContainer) {
+    displayTaskDetailsSection(taskDetails, detailsContainer);
   }
   
   // Update right panel with all database attributes
@@ -1975,6 +1973,35 @@ function displayModernTaskDetails(taskDetails) {
   // Store task details for later use
   modal.dataset.taskId = taskDetails.id;
   modal.taskDetails = taskDetails;
+}
+
+// Display task details in the Details section
+function displayTaskDetailsSection(taskDetails, container) {
+  console.log('📋 Displaying task details section');
+  
+  let detailsHtml = '';
+  
+  // Show key database properties in the details section
+  const importantProps = ['Description', 'Status', 'Priority', 'Due Date', 'Category', 'Tags', 'Location', 'Estimated Hours'];
+  
+  importantProps.forEach(propName => {
+    const prop = taskDetails.properties[propName];
+    if (prop && (prop.displayValue || prop.displayValue === 0)) {
+      detailsHtml += `
+        <div class="details-item">
+          <div class="details-label">${propName}:</div>
+          <div class="details-value">${prop.displayValue}</div>
+        </div>
+      `;
+    }
+  });
+  
+  // If no details found, show a message
+  if (!detailsHtml) {
+    detailsHtml = '<div class="details-item"><div class="details-value empty">No additional details available</div></div>';
+  }
+  
+  container.innerHTML = detailsHtml;
 }
 
 // Update the right panel with all database attributes
@@ -2069,10 +2096,9 @@ function addSubtask() {
 function editTask() {
   console.log('✏️ Edit task clicked');
   
-  // Enable all form elements
+  // Enable all form elements for editing
   const formElements = [
     'modal-task-title',
-    'modal-task-description', 
     'modal-task-status',
     'modal-task-date',
     'modal-task-priority',
@@ -2085,15 +2111,28 @@ function editTask() {
   formElements.forEach(id => {
     const element = document.getElementById(id);
     if (element) {
+      console.log(`🔧 Enabling editing for ${id}:`, element);
       element.removeAttribute('readonly');
       element.removeAttribute('disabled');
+      
+      // Add visual feedback that element is editable
+      element.style.border = '1px solid #63b3ed';
+      element.style.backgroundColor = 'rgba(99, 179, 237, 0.1)';
+    } else {
+      console.warn(`⚠️ Element not found: ${id}`);
     }
   });
   
   // Show save/cancel buttons, hide edit button
-  document.getElementById('edit-task-btn').style.display = 'none';
-  document.getElementById('save-task-btn').style.display = 'inline-block';
-  document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+  const editBtn = document.getElementById('edit-task-btn');
+  const saveBtn = document.getElementById('save-task-btn');
+  const cancelBtn = document.getElementById('cancel-edit-btn');
+  
+  if (editBtn) editBtn.style.display = 'none';
+  if (saveBtn) saveBtn.style.display = 'inline-block';
+  if (cancelBtn) cancelBtn.style.display = 'inline-block';
+  
+  console.log('✅ Edit mode enabled');
 }
 
 // Save task changes
@@ -2116,13 +2155,6 @@ async function saveTaskChanges() {
   if (title) {
     properties['Name'] = title;
     properties['Name_type'] = 'title';
-  }
-  
-  // Description
-  const description = document.getElementById('modal-task-description').value.trim();
-  if (description) {
-    properties['Description'] = description;
-    properties['Description_type'] = 'rich_text';
   }
   
   // Status
@@ -2214,7 +2246,34 @@ async function saveTaskChanges() {
   } catch (error) {
     console.error('Error updating task:', error);
     alert('Failed to update task. Please try again.');
+  } finally {
+    // Reset form styling
+    resetFormStyling();
   }
+}
+
+// Reset form styling after save/cancel
+function resetFormStyling() {
+  const formElements = [
+    'modal-task-title',
+    'modal-task-status',
+    'modal-task-date',
+    'modal-task-priority',
+    'modal-task-estimated-hours',
+    'modal-task-category',
+    'modal-task-tags',
+    'modal-task-location'
+  ];
+  
+  formElements.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.border = '';
+      element.style.backgroundColor = '';
+      element.setAttribute('readonly', 'true');
+      element.setAttribute('disabled', 'true');
+    }
+  });
 }
 
 // Cancel task editing
