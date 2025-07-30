@@ -390,47 +390,223 @@ function displayUpcomingTasksGrouped(tasks) {
     </div>
   `;
   
-  // Group tasks by due date
-  const tasksByDate = groupTasksByDate(tasks);
+  // Display different layouts based on filter
+  if (currentFilter === 'week') {
+    html += displayWeeklyView(tasks);
+  } else if (currentFilter === 'month') {
+    html += displayMonthlyCalendarView(tasks);
+  } else {
+    // For 'day' filter, use the original grouped layout
+    const tasksByDate = groupTasksByDate(tasks);
+    html += displayGroupedTasks(tasksByDate);
+  }
   
-  if (Object.keys(tasksByDate).length === 0) {
+  contentArea.innerHTML = html;
+}
+
+// Display tasks in weekly column layout
+function displayWeeklyView(tasks) {
+  const today = new Date();
+  const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  
+  // Calculate dates for this week (Sunday to Saturday)
+  const weekDates = [];
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - currentDay); // Go to Sunday
+  
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(startOfWeek);
+    date.setDate(startOfWeek.getDate() + i);
+    weekDates.push(date);
+  }
+  
+  // Group tasks by date
+  const tasksByDate = {};
+  tasks.forEach(task => {
+    if (task.dueDate) {
+      const taskDate = new Date(task.dueDate);
+      const dateKey = taskDate.toISOString().split('T')[0];
+      if (!tasksByDate[dateKey]) {
+        tasksByDate[dateKey] = [];
+      }
+      tasksByDate[dateKey].push(task);
+    }
+  });
+  
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  
+  let html = '<div class="week-view">';
+  
+  weekDates.forEach((date, index) => {
+    const dateKey = date.toISOString().split('T')[0];
+    const dayTasks = tasksByDate[dateKey] || [];
+    const isToday = date.toDateString() === today.toDateString();
+    const dayName = dayNames[index];
+    const dayNumber = date.getDate();
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    
     html += `
+      <div class="week-day ${isToday ? 'today' : ''}">
+        <div class="week-day-header">
+          <div class="day-name">${dayName}</div>
+          <div class="day-date">${monthName} ${dayNumber}</div>
+        </div>
+        <div class="week-day-tasks">
+    `;
+    
+    if (dayTasks.length === 0) {
+      html += '<div class="no-tasks">No tasks</div>';
+    } else {
+      dayTasks.forEach(task => {
+        html += createCompactTaskItem(task);
+      });
+    }
+    
+    html += '</div></div>';
+  });
+  
+  html += '</div>';
+  return html;
+}
+
+// Display tasks in monthly calendar layout
+function displayMonthlyCalendarView(tasks) {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  
+  // Get first day of month and how many days in month
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday
+  
+  // Group tasks by date
+  const tasksByDate = {};
+  tasks.forEach(task => {
+    if (task.dueDate) {
+      const taskDate = new Date(task.dueDate);
+      if (taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear) {
+        const dateKey = taskDate.toISOString().split('T')[0];
+        if (!tasksByDate[dateKey]) {
+          tasksByDate[dateKey] = [];
+        }
+        tasksByDate[dateKey].push(task);
+      }
+    }
+  });
+  
+  const monthName = today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  let html = `
+    <div class="calendar-view">
+      <div class="calendar-header">
+        <h3>${monthName}</h3>
+      </div>
+      <div class="calendar-grid">
+        <div class="calendar-day-headers">
+  `;
+  
+  // Day headers
+  dayNames.forEach(dayName => {
+    html += `<div class="calendar-day-header">${dayName}</div>`;
+  });
+  
+  html += '</div><div class="calendar-days">';
+  
+  // Empty cells for days before month starts
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    html += '<div class="calendar-day empty"></div>';
+  }
+  
+  // Days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(currentYear, currentMonth, day);
+    const dateKey = date.toISOString().split('T')[0];
+    const dayTasks = tasksByDate[dateKey] || [];
+    const isToday = date.toDateString() === today.toDateString();
+    
+    html += `
+      <div class="calendar-day ${isToday ? 'today' : ''}">
+        <div class="calendar-day-number">${day}</div>
+        <div class="calendar-day-tasks">
+    `;
+    
+    if (dayTasks.length > 0) {
+      dayTasks.slice(0, 3).forEach(task => { // Show max 3 tasks
+        html += `<div class="calendar-task" title="${escapeHtml(task.text)}">${escapeHtml(task.text.substring(0, 20))}${task.text.length > 20 ? '...' : ''}</div>`;
+      });
+      
+      if (dayTasks.length > 3) {
+        html += `<div class="calendar-task-more">+${dayTasks.length - 3} more</div>`;
+      }
+    }
+    
+    html += '</div></div>';
+  }
+  
+  html += '</div></div></div>';
+  return html;
+}
+
+// Display original grouped tasks layout
+function displayGroupedTasks(tasksByDate) {
+  if (Object.keys(tasksByDate).length === 0) {
+    return `
       <div class="empty-state">
         <div class="empty-state-icon">📅</div>
         <h3>No upcoming tasks</h3>
         <p>You're all caught up! No tasks are due in the selected time period.</p>
       </div>
     `;
-  } else {
-    html += '<div class="grouped-tasks">';
-    
-    // Sort dates and display groups
-    const sortedDates = Object.keys(tasksByDate).sort();
-    
-    sortedDates.forEach(dateKey => {
-      const dateTasks = tasksByDate[dateKey];
-      const displayDate = formatDateGroup(dateKey);
-      
-      html += `
-        <div class="date-group">
-          <div class="date-group-header">
-            <h3 class="date-group-title">${displayDate}</h3>
-            <span class="date-group-count">${dateTasks.length} ${dateTasks.length === 1 ? 'task' : 'tasks'}</span>
-          </div>
-          <div class="date-group-tasks">
-      `;
-      
-      dateTasks.forEach(task => {
-        html += createTaskListItem(task);
-      });
-      
-      html += '</div></div>';
-    });
-    
-    html += '</div>';
   }
   
-  contentArea.innerHTML = html;
+  let html = '<div class="grouped-tasks">';
+  
+  // Sort dates and display groups
+  const sortedDates = Object.keys(tasksByDate).sort();
+  
+  sortedDates.forEach(dateKey => {
+    const dateTasks = tasksByDate[dateKey];
+    const displayDate = formatDateGroup(dateKey);
+    
+    html += `
+      <div class="date-group">
+        <div class="date-group-header">
+          <h3 class="date-group-title">${displayDate}</h3>
+          <span class="date-group-count">${dateTasks.length} ${dateTasks.length === 1 ? 'task' : 'tasks'}</span>
+        </div>
+        <div class="date-group-tasks">
+    `;
+    
+    dateTasks.forEach(task => {
+      html += createTaskListItem(task);
+    });
+    
+    html += '</div></div>';
+  });
+  
+  html += '</div>';
+  return html;
+}
+
+// Create compact task item for week view
+function createCompactTaskItem(task) {
+  const priorityIcon = task.priority === 'High' ? '🔴' : task.priority === 'Medium' ? '🟡' : task.priority === 'Low' ? '🟢' : '';
+  const statusIcon = task.status === 'In Progress' ? '🔄' : task.status === 'Blocked' ? '🚫' : '📝';
+  
+  return `
+    <div class="compact-task-item" onclick="openTaskDetails('${task.id}', '${escapeHtml(task.text)}')">
+      <div class="compact-task-content">
+        <div class="compact-task-icons">
+          <span class="task-status-icon">${statusIcon}</span>
+          ${priorityIcon ? `<span class="task-priority-icon">${priorityIcon}</span>` : ''}
+        </div>
+        <div class="compact-task-text">${escapeHtml(task.text)}</div>
+      </div>
+    </div>
+  `;
 }
 
 // Group tasks by their due date
