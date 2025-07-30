@@ -341,6 +341,38 @@ body.dark-mode .main-content {
   color: #e2e8f0;
 }
 
+/* Dark mode title styling */
+body.dark-mode #view-title {
+  background: linear-gradient(135deg, #90cdf4 0%, #b794f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Dark mode board task styling */
+body.dark-mode .board-task {
+  background: rgba(45, 55, 72, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+}
+
+body.dark-mode .board-task:hover {
+  background: rgba(45, 55, 72, 0.95);
+  border-color: rgba(144, 205, 244, 0.5);
+  box-shadow: 0 4px 15px rgba(144, 205, 244, 0.2);
+}
+
+/* Dark mode board column styling */
+body.dark-mode .board-column {
+  background: rgba(26, 32, 44, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .board-column h3 {
+  color: #e2e8f0;
+}
+
 body.dark-mode .settings-panel {
   background: rgba(255, 255, 255, 0.05);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
