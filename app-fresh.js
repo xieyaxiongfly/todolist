@@ -1074,7 +1074,12 @@ async function handleTaskDrop(event, targetStatus) {
   console.log('🎯 Drop event triggered for target status:', targetStatus);
   console.log('🎯 Event target:', event.target, 'Current target:', event.currentTarget);
   event.preventDefault();
-  event.currentTarget.classList.remove('drop-zone-hover');
+  
+  // Safely remove hover class - find the actual drop zone
+  const dropZone = event.target.closest('.board-task-list') || document.querySelector(`.board-task-list[data-status="${targetStatus}"]`);
+  if (dropZone && dropZone.classList) {
+    dropZone.classList.remove('drop-zone-hover');
+  }
   
   if (!draggedTask) {
     console.log('❌ No dragged task found');
