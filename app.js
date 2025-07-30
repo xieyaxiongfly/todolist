@@ -167,6 +167,10 @@ function updateViewHeader(viewName) {
     'blocked': {
       title: 'Blocked',
       subtitle: 'Tasks waiting on external dependencies'
+    },
+    'add-task': {
+      title: 'Add New Task',
+      subtitle: 'Create and organize your new task'
     }
   };
   
@@ -229,13 +233,20 @@ function getFilteredTasks() {
 
 // Display current view with filtered tasks
 function displayCurrentView() {
+  const contentArea = document.getElementById('content-area');
+  const taskCountElement = document.getElementById('main-task-count');
+  
+  // Handle add-task view specially
+  if (currentView === 'add-task') {
+    displayAddTaskView();
+    taskCountElement.textContent = '';
+    return;
+  }
+  
   filteredTasks = getFilteredTasks();
   
   console.log('📊 Displaying current view:', currentView, 'with', filteredTasks.length, 'tasks');
   console.log('📋 Filtered tasks:', filteredTasks.map(t => ({ id: t.id, text: t.text })));
-  
-  const contentArea = document.getElementById('content-area');
-  const taskCountElement = document.getElementById('main-task-count');
   
   // Update task count
   const taskCount = filteredTasks.length;
@@ -267,6 +278,12 @@ function displayCurrentView() {
 function displayListView(tasks) {
   const contentArea = document.getElementById('content-area');
   
+  // Special handling for upcoming tasks - group by date
+  if (currentView === 'upcoming') {
+    displayUpcomingTasksGrouped(tasks);
+    return;
+  }
+  
   let html = '<div class="task-list">';
   
   tasks.forEach(task => {
@@ -275,6 +292,229 @@ function displayListView(tasks) {
   
   html += '</div>';
   contentArea.innerHTML = html;
+}
+
+// Display upcoming tasks grouped by due date
+function displayUpcomingTasksGrouped(tasks) {
+  const contentArea = document.getElementById('content-area');
+  const currentFilter = getCurrentUpcomingFilter();
+  
+  // Add time filter buttons
+  let html = `
+    <div class="upcoming-filters">
+      <button class="filter-btn ${currentFilter === 'day' ? 'active' : ''}" onclick="setUpcomingFilter('day')" data-filter="day">
+        <span class="filter-icon">📅</span>
+        <span class="filter-text">Next Day</span>
+      </button>
+      <button class="filter-btn ${currentFilter === 'week' ? 'active' : ''}" onclick="setUpcomingFilter('week')" data-filter="week">
+        <span class="filter-icon">📆</span>
+        <span class="filter-text">Next Week</span>
+      </button>
+      <button class="filter-btn ${currentFilter === 'month' ? 'active' : ''}" onclick="setUpcomingFilter('month')" data-filter="month">
+        <span class="filter-icon">🗓️</span>
+        <span class="filter-text">Next Month</span>
+      </button>
+    </div>
+  `;
+  
+  // Group tasks by due date
+  const tasksByDate = groupTasksByDate(tasks);
+  
+  if (Object.keys(tasksByDate).length === 0) {
+    html += `
+      <div class="empty-state">
+        <div class="empty-state-icon">📅</div>
+        <h3>No upcoming tasks</h3>
+        <p>You're all caught up! No tasks are due in the selected time period.</p>
+      </div>
+    `;
+  } else {
+    html += '<div class="grouped-tasks">';
+    
+    // Sort dates and display groups
+    const sortedDates = Object.keys(tasksByDate).sort();
+    
+    sortedDates.forEach(dateKey => {
+      const dateTasks = tasksByDate[dateKey];
+      const displayDate = formatDateGroup(dateKey);
+      
+      html += `
+        <div class="date-group">
+          <div class="date-group-header">
+            <h3 class="date-group-title">${displayDate}</h3>
+            <span class="date-group-count">${dateTasks.length} ${dateTasks.length === 1 ? 'task' : 'tasks'}</span>
+          </div>
+          <div class="date-group-tasks">
+      `;
+      
+      dateTasks.forEach(task => {
+        html += createTaskListItem(task);
+      });
+      
+      html += '</div></div>';
+    });
+    
+    html += '</div>';
+  }
+  
+  contentArea.innerHTML = html;
+}
+
+// Group tasks by their due date
+function groupTasksByDate(tasks) {
+  const tasksByDate = {};
+  const currentFilter = getCurrentUpcomingFilter();
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  // Calculate filter end date
+  let filterEndDate = new Date(today);
+  switch (currentFilter) {
+    case 'day':
+      filterEndDate.setDate(today.getDate() + 1);
+      break;
+    case 'week':
+      filterEndDate.setDate(today.getDate() + 7);
+      break;
+    case 'month':
+      filterEndDate.setMonth(today.getMonth() + 1);
+      break;
+  }
+  
+  tasks.forEach(task => {
+    if (!task.dueDate) return;
+    
+    const dueDate = new Date(task.dueDate);
+    const dueDateKey = dueDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // Only include tasks within the filter range
+    if (dueDate >= today && dueDate < filterEndDate) {
+      if (!tasksByDate[dueDateKey]) {
+        tasksByDate[dueDateKey] = [];
+      }
+      tasksByDate[dueDateKey].push(task);
+    }
+  });
+  
+  return tasksByDate;
+}
+
+// Format date group header
+function formatDateGroup(dateKey) {
+  const date = new Date(dateKey);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  
+  const dateStr = date.toDateString();
+  const todayStr = today.toDateString();
+  const tomorrowStr = tomorrow.toDateString();
+  
+  if (dateStr === todayStr) {
+    return 'Today';
+  } else if (dateStr === tomorrowStr) {
+    return 'Tomorrow';
+  } else {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  }
+}
+
+// Get current upcoming filter (default to 'week')
+function getCurrentUpcomingFilter() {
+  return localStorage.getItem('upcoming-filter') || 'week';
+}
+
+// Set upcoming filter
+function setUpcomingFilter(filter) {
+  localStorage.setItem('upcoming-filter', filter);
+  
+  // Update active button
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`[data-filter="${filter}"]`)?.classList.add('active');
+  
+  // Refresh the view
+  displayCurrentView();
+}
+
+// Display Add Task page
+function displayAddTaskView() {
+  const contentArea = document.getElementById('content-area');
+  
+  contentArea.innerHTML = `
+    <div class="add-task-page">
+      <div class="add-task-form">
+        <div class="task-input-container">
+          <input type="text" id="new-task-title" class="task-title-input" placeholder="Task name" />
+        </div>
+        
+        <div class="task-details-section">
+          <div class="task-detail-row">
+            <div class="task-detail-item">
+              <label class="task-detail-label">
+                <span class="detail-icon">📅</span>
+                <span class="detail-text">Due date</span>
+              </label>
+              <input type="date" id="new-task-due-date" class="task-detail-input" />
+            </div>
+            
+            <div class="task-detail-item">
+              <label class="task-detail-label">
+                <span class="detail-icon">🏷️</span>
+                <span class="detail-text">Priority</span>
+              </label>
+              <select id="new-task-priority" class="task-detail-input">
+                <option value="">Select priority</option>
+                <option value="High">🔴 High</option>
+                <option value="Medium">🟡 Medium</option>
+                <option value="Low">🟢 Low</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="task-detail-row">
+            <div class="task-detail-item">
+              <label class="task-detail-label">
+                <span class="detail-icon">📋</span>
+                <span class="detail-text">Status</span>
+              </label>
+              <select id="new-task-status" class="task-detail-input">
+                <option value="To Do">📝 To Do</option>
+                <option value="In Progress">🔄 In Progress</option>
+                <option value="Blocked">🚫 Blocked</option>
+              </select>
+            </div>
+            
+            <div class="task-detail-item">
+              <label class="task-detail-label">
+                <span class="detail-icon">⏱️</span>
+                <span class="detail-text">Estimated time</span>
+              </label>
+              <input type="number" id="new-task-time" class="task-detail-input" placeholder="Hours" min="0" step="0.25" />
+            </div>
+          </div>
+        </div>
+        
+        <div class="task-description-section">
+          <label class="task-detail-label">
+            <span class="detail-icon">📝</span>
+            <span class="detail-text">Description</span>
+          </label>
+          <textarea id="new-task-description" class="task-description-input" placeholder="Add a description..." rows="4"></textarea>
+        </div>
+        
+        <div class="add-task-actions">
+          <button class="btn-cancel" onclick="switchView('today')">Cancel</button>
+          <button class="btn-save" onclick="createNewTask()">Add Task</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // Display tasks in board format (for "All Tasks" view)
@@ -600,6 +840,83 @@ function generateBasicForm(container) {
   `;
 }
 
+// Create new task from the Add Task page
+async function createNewTask() {
+  const title = document.getElementById('new-task-title')?.value?.trim();
+  const dueDate = document.getElementById('new-task-due-date')?.value;
+  const priority = document.getElementById('new-task-priority')?.value;
+  const status = document.getElementById('new-task-status')?.value || 'To Do';
+  const estimatedTime = document.getElementById('new-task-time')?.value;
+  const description = document.getElementById('new-task-description')?.value?.trim();
+  
+  if (!title) {
+    alert('Please enter a task title');
+    document.getElementById('new-task-title')?.focus();
+    return;
+  }
+  
+  try {
+    // Prepare data for the API
+    const properties = {
+      'Task': title,
+      'Task_type': 'title'
+    };
+    
+    if (status) {
+      properties['Status'] = status;
+      properties['Status_type'] = 'select';
+    }
+    
+    if (dueDate) {
+      properties['Due Date'] = dueDate;
+      properties['Due Date_type'] = 'date';
+    }
+    
+    if (priority) {
+      properties['Priority'] = priority;
+      properties['Priority_type'] = 'select';
+    }
+    
+    if (estimatedTime) {
+      properties['Estimated Hours'] = parseFloat(estimatedTime);
+      properties['Estimated Hours_type'] = 'number';
+    }
+    
+    if (description) {
+      properties['Description'] = description;
+      properties['Description_type'] = 'rich_text';
+    }
+    
+    console.log('Creating task with properties:', properties);
+    
+    const response = await fetch(`${API_BASE}/add-todo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ properties })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const newTask = await response.json();
+    console.log('Task created successfully:', newTask);
+    
+    // Refresh the tasks and go back to Today view
+    await getTodos();
+    switchView('today');
+    
+    // Show success message
+    alert('Task created successfully!');
+    
+  } catch (error) {
+    console.error('Error creating task:', error);
+    alert('Failed to create task. Please try again.');
+  }
+}
+
 async function submitNewTask() {
   const form = document.getElementById('add-task-form');
   if (!form) return;
@@ -799,6 +1116,26 @@ function toggleSettings() {
   panel.classList.toggle('show');
 }
 
+// Dark mode functionality
+function toggleDarkMode() {
+  const body = document.body;
+  const isDarkMode = body.classList.toggle('dark-mode');
+  
+  // Save preference
+  localStorage.setItem('dark-mode', isDarkMode);
+}
+
+function loadDarkModePreference() {
+  const isDarkMode = localStorage.getItem('dark-mode') === 'true';
+  const body = document.body;
+  const toggle = document.getElementById('dark-mode-toggle');
+  
+  if (isDarkMode) {
+    body.classList.add('dark-mode');
+    if (toggle) toggle.checked = true;
+  }
+}
+
 function setBackground(type) {
   const body = document.body;
   
@@ -987,12 +1324,20 @@ document.addEventListener('click', function(e) {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
-  // Load background preference
+  // Load preferences
+  loadDarkModePreference();
   loadBackgroundPreference();
+  loadUpcomingFilterPreference();
   
   // Set initial view
   switchView('today');
 });
+
+// Load upcoming filter preference and set active button
+function loadUpcomingFilterPreference() {
+  const savedFilter = getCurrentUpcomingFilter();
+  // Button will be set when upcoming view is first displayed
+}
 
 // Task Details Modal Functions
 function openTaskDetails(taskId, taskTitle) {

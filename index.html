@@ -16,7 +16,7 @@
       </div>
 
       <!-- Add Task Button -->
-      <button class="add-task-sidebar-btn" onclick="showAddTaskForm()">
+      <button class="add-task-sidebar-btn" onclick="switchView('add-task')" data-view="add-task">
         <span class="icon">+</span>
         <span class="text">Add Task</span>
       </button>
@@ -80,6 +80,15 @@
 
       <!-- Settings Panel (moved to sidebar) -->
       <div class="settings-panel" id="settings-panel">
+        <h3>Theme Settings</h3>
+        <div class="theme-toggle">
+          <label class="toggle-switch">
+            <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode()">
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">Dark Mode</span>
+          </label>
+        </div>
+        
         <h3>Background Settings</h3>
         <div class="background-options">
           <button onclick="setBackground('gradient1')">Blue Purple</button>
@@ -118,20 +127,6 @@
         <div class="loading">Loading tasks...</div>
       </div>
 
-      <!-- Add Task Form (shown when Add Task is clicked) -->
-      <div class="add-task-panel" id="add-task-panel" style="display: none;">
-        <div class="panel-header">
-          <h3>Add New Task</h3>
-          <button class="close-panel-btn" onclick="hideAddTaskForm()">×</button>
-        </div>
-        <div class="panel-body" id="add-task-form-container">
-          <div class="loading">Loading form...</div>
-        </div>
-        <div class="panel-footer">
-          <button onclick="hideAddTaskForm()" class="btn-secondary">Cancel</button>
-          <button onclick="submitNewTask()" class="btn-primary">Create Task</button>
-        </div>
-      </div>
     </div>
   </div>
 
