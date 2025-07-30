@@ -2012,7 +2012,9 @@ body.dark-mode .calendar-task-more {
 
 .date-input,
 .datetime-input,
-.location-input {
+.location-input,
+.number-input,
+.tags-input {
   background: transparent;
   border: none;
   color: #e2e8f0;
@@ -2021,7 +2023,9 @@ body.dark-mode .calendar-task-more {
   font-size: 14px;
 }
 
-.priority-select {
+.priority-select,
+.status-select,
+.category-select {
   background: transparent;
   border: none;
   color: #e2e8f0;
@@ -2030,9 +2034,27 @@ body.dark-mode .calendar-task-more {
   font-size: 14px;
 }
 
-.priority-select option {
+.priority-select option,
+.status-select option,
+.category-select option {
   background: #2d3748;
   color: #e2e8f0;
+}
+
+/* Metadata Section */
+.metadata-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #4a5568;
+}
+
+.metadata-value {
+  color: #a0aec0;
+  font-size: 12px;
+}
+
+.metadata-value .property-icon {
+  color: #718096;
 }
 
 .calendar-btn,

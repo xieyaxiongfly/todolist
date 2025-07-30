@@ -179,6 +179,21 @@
 
       <!-- Right Panel - Properties -->
       <div class="modal-right-panel">
+        <!-- Status Section -->
+        <div class="property-section">
+          <div class="property-label">Status</div>
+          <div class="property-value">
+            <span class="property-icon">🔄</span>
+            <select id="modal-task-status" class="status-select" disabled>
+              <option value="">Select Status</option>
+              <option value="To Do">📝 To Do</option>
+              <option value="In Progress">⚡ In Progress</option>
+              <option value="Done">✅ Done</option>
+              <option value="Blocked">🚫 Blocked</option>
+            </select>
+          </div>
+        </div>
+
         <!-- Project Section -->
         <div class="property-section">
           <div class="property-label">Project</div>
@@ -188,21 +203,12 @@
           </div>
         </div>
 
-        <!-- Date Section -->
+        <!-- Due Date Section -->
         <div class="property-section">
-          <div class="property-label">Date</div>
+          <div class="property-label">Due Date</div>
           <div class="property-value">
             <span class="property-icon">📅</span>
             <input type="date" id="modal-task-date" class="date-input" readonly>
-          </div>
-        </div>
-
-        <!-- Deadline Section -->
-        <div class="property-section">
-          <div class="property-label">Deadline 🔥</div>
-          <div class="property-value">
-            <input type="datetime-local" id="modal-task-deadline" class="datetime-input" readonly>
-            <button class="calendar-btn">📅</button>
           </div>
         </div>
 
@@ -210,38 +216,75 @@
         <div class="property-section">
           <div class="property-label">Priority</div>
           <div class="property-value">
+            <span class="property-icon">⭐</span>
             <select id="modal-task-priority" class="priority-select" disabled>
               <option value="">No Priority</option>
-              <option value="P1">🔴 P1</option>
-              <option value="P2">🟡 P2</option>
-              <option value="P3">🔵 P3</option>
-              <option value="P4">⚪ P4</option>
+              <option value="High">🔴 High</option>
+              <option value="Medium">🟡 Medium</option>
+              <option value="Low">🟢 Low</option>
             </select>
           </div>
         </div>
 
-        <!-- Labels Section -->
+        <!-- Estimated Hours Section -->
         <div class="property-section">
-          <div class="property-label">Labels</div>
+          <div class="property-label">Estimated Hours</div>
           <div class="property-value">
-            <button class="add-label-btn">+</button>
+            <span class="property-icon">⏰</span>
+            <input type="number" id="modal-task-estimated-hours" class="number-input" placeholder="0" readonly step="0.5" min="0">
           </div>
         </div>
 
-        <!-- Reminders Section -->
+        <!-- Category Section -->
         <div class="property-section">
-          <div class="property-label">Reminders</div>
+          <div class="property-label">Category</div>
           <div class="property-value">
-            <button class="add-reminder-btn">+</button>
+            <span class="property-icon">🏷️</span>
+            <select id="modal-task-category" class="category-select" disabled>
+              <option value="">No Category</option>
+              <option value="Work">💼 Work</option>
+              <option value="Personal">👤 Personal</option>
+              <option value="Study">📚 Study</option>
+              <option value="Health">💪 Health</option>
+              <option value="Finance">💰 Finance</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tags Section -->
+        <div class="property-section">
+          <div class="property-label">Tags</div>
+          <div class="property-value">
+            <span class="property-icon">🏷️</span>
+            <input type="text" id="modal-task-tags" class="tags-input" placeholder="Add tags..." readonly>
           </div>
         </div>
 
         <!-- Location Section -->
         <div class="property-section">
-          <div class="property-label">Location 🔥</div>
+          <div class="property-label">Location</div>
           <div class="property-value">
+            <span class="property-icon">📍</span>
             <input type="text" id="modal-task-location" class="location-input" placeholder="Add location..." readonly>
-            <button class="location-btn">📍</button>
+          </div>
+        </div>
+
+        <!-- Metadata Section -->
+        <div class="metadata-section">
+          <div class="property-section">
+            <div class="property-label">Created</div>
+            <div class="property-value metadata-value">
+              <span class="property-icon">📅</span>
+              <span id="modal-created-time">-</span>
+            </div>
+          </div>
+
+          <div class="property-section">
+            <div class="property-label">Last Edited</div>
+            <div class="property-value metadata-value">
+              <span class="property-icon">✏️</span>
+              <span id="modal-edited-time">-</span>
+            </div>
           </div>
         </div>
       </div>

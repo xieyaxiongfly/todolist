@@ -1942,26 +1942,52 @@ function setModalLoading() {
 // Display task details in modern modal
 function displayModernTaskDetails(taskDetails) {
   console.log('🎨 Displaying modern task details:', taskDetails);
+  const modal = document.getElementById('task-modal');
   
-  // Update task title
+  // Update task title (Name property)
   const titleInput = document.getElementById('modal-task-title');
   const checkbox = document.getElementById('modal-task-checkbox');
   
-  if (titleInput && taskDetails.properties.Name) {
-    titleInput.value = taskDetails.properties.Name.displayValue || 'Untitled Task';
+  if (titleInput) {
+    const taskName = taskDetails.properties.Name?.displayValue || 
+                    taskDetails.properties.Task?.displayValue || 
+                    'Untitled Task';
+    titleInput.value = taskName;
   }
   
+  // Update task completion status
   if (checkbox) {
-    checkbox.checked = taskDetails.properties.Status?.displayValue === 'Done';
+    const status = taskDetails.properties.Status?.displayValue;
+    checkbox.checked = status === 'Done' || status === 'Completed';
   }
   
   // Update description
   const descriptionInput = document.getElementById('modal-task-description');
-  if (descriptionInput && taskDetails.properties.Description) {
-    descriptionInput.value = taskDetails.properties.Description.displayValue || '';
+  if (descriptionInput) {
+    const description = taskDetails.properties.Description?.displayValue || '';
+    descriptionInput.value = description;
+    descriptionInput.placeholder = 'Add description...';
   }
   
-  // Update due date
+  // Update right panel with all database attributes
+  updateModalRightPanel(taskDetails);
+  
+  // Store task details for later use
+  modal.dataset.taskId = taskDetails.id;
+  modal.taskDetails = taskDetails;
+}
+
+// Update the right panel with all database attributes
+function updateModalRightPanel(taskDetails) {
+  console.log('📊 Updating right panel with all attributes:', taskDetails.properties);
+  
+  // Update Status
+  const statusSelect = document.getElementById('modal-task-status');
+  if (statusSelect && taskDetails.properties.Status) {
+    statusSelect.value = taskDetails.properties.Status.displayValue || '';
+  }
+  
+  // Update Due Date
   const dateInput = document.getElementById('modal-task-date');
   if (dateInput && taskDetails.properties['Due Date']) {
     const dueDate = taskDetails.properties['Due Date'].value?.start;
@@ -1970,21 +1996,54 @@ function displayModernTaskDetails(taskDetails) {
     }
   }
   
-  // Update priority
+  // Update Priority
   const prioritySelect = document.getElementById('modal-task-priority');
   if (prioritySelect && taskDetails.properties.Priority) {
     const priority = taskDetails.properties.Priority.displayValue;
     prioritySelect.value = priority || '';
   }
   
-  // Update location
+  // Update Estimated Hours
+  const estimatedHoursInput = document.getElementById('modal-task-estimated-hours');
+  if (estimatedHoursInput && taskDetails.properties['Estimated Hours']) {
+    estimatedHoursInput.value = taskDetails.properties['Estimated Hours'].displayValue || '';
+  }
+  
+  // Update Category
+  const categorySelect = document.getElementById('modal-task-category');
+  if (categorySelect && taskDetails.properties.Category) {
+    categorySelect.value = taskDetails.properties.Category.displayValue || '';
+  }
+  
+  // Update Location
   const locationInput = document.getElementById('modal-task-location');
   if (locationInput && taskDetails.properties.Location) {
     locationInput.value = taskDetails.properties.Location.displayValue || '';
   }
   
-  // Store task ID for later use
-  modal.dataset.taskId = taskDetails.id;
+  // Update Tags
+  const tagsInput = document.getElementById('modal-task-tags');
+  if (tagsInput && taskDetails.properties.Tags) {
+    tagsInput.value = taskDetails.properties.Tags.displayValue || '';
+  }
+  
+  // Update Project
+  const projectInput = document.getElementById('modal-task-project');
+  if (projectInput && taskDetails.properties.Project) {
+    projectInput.textContent = taskDetails.properties.Project.displayValue || 'Inbox';
+  }
+  
+  // Update Created Time
+  const createdTime = document.getElementById('modal-created-time');
+  if (createdTime && taskDetails.created_time) {
+    createdTime.textContent = new Date(taskDetails.created_time).toLocaleString();
+  }
+  
+  // Update Last Edited Time
+  const editedTime = document.getElementById('modal-edited-time');
+  if (editedTime && taskDetails.last_edited_time) {
+    editedTime.textContent = new Date(taskDetails.last_edited_time).toLocaleString();
+  }
 }
 
 // Toggle task completion from modal
@@ -2004,6 +2063,177 @@ function toggleTaskCompletion() {
 function addSubtask() {
   console.log('➕ Add subtask clicked');
   // Placeholder for subtask functionality
+}
+
+// Edit task functionality for modern modal
+function editTask() {
+  console.log('✏️ Edit task clicked');
+  
+  // Enable all form elements
+  const formElements = [
+    'modal-task-title',
+    'modal-task-description', 
+    'modal-task-status',
+    'modal-task-date',
+    'modal-task-priority',
+    'modal-task-estimated-hours',
+    'modal-task-category',
+    'modal-task-tags',
+    'modal-task-location'
+  ];
+  
+  formElements.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.removeAttribute('readonly');
+      element.removeAttribute('disabled');
+    }
+  });
+  
+  // Show save/cancel buttons, hide edit button
+  document.getElementById('edit-task-btn').style.display = 'none';
+  document.getElementById('save-task-btn').style.display = 'inline-block';
+  document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+}
+
+// Save task changes
+async function saveTaskChanges() {
+  console.log('💾 Save task changes clicked');
+  
+  const modal = document.getElementById('task-modal');
+  const taskId = modal.dataset.taskId;
+  
+  if (!taskId) {
+    console.error('No task ID found');
+    return;
+  }
+  
+  // Collect all form data
+  const properties = {};
+  
+  // Task title (Name property)  
+  const title = document.getElementById('modal-task-title').value.trim();
+  if (title) {
+    properties['Name'] = title;
+    properties['Name_type'] = 'title';
+  }
+  
+  // Description
+  const description = document.getElementById('modal-task-description').value.trim();
+  if (description) {
+    properties['Description'] = description;
+    properties['Description_type'] = 'rich_text';
+  }
+  
+  // Status
+  const status = document.getElementById('modal-task-status').value;
+  if (status) {
+    properties['Status'] = status;
+    properties['Status_type'] = 'select';
+  }
+  
+  // Due Date
+  const dueDate = document.getElementById('modal-task-date').value;
+  if (dueDate) {
+    properties['Due Date'] = dueDate;
+    properties['Due Date_type'] = 'date';
+  }
+  
+  // Priority
+  const priority = document.getElementById('modal-task-priority').value;
+  if (priority) {
+    properties['Priority'] = priority;
+    properties['Priority_type'] = 'select';
+  }
+  
+  // Estimated Hours
+  const estimatedHours = document.getElementById('modal-task-estimated-hours').value;
+  if (estimatedHours) {
+    properties['Estimated Hours'] = parseFloat(estimatedHours);
+    properties['Estimated Hours_type'] = 'number';
+  }
+  
+  // Category
+  const category = document.getElementById('modal-task-category').value;
+  if (category) {
+    properties['Category'] = category;
+    properties['Category_type'] = 'select';
+  }
+  
+  // Tags
+  const tags = document.getElementById('modal-task-tags').value.trim();
+  if (tags) {
+    properties['Tags'] = tags;
+    properties['Tags_type'] = 'rich_text';
+  }
+  
+  // Location
+  const location = document.getElementById('modal-task-location').value.trim();
+  if (location) {
+    properties['Location'] = location;
+    properties['Location_type'] = 'rich_text';
+  }
+  
+  try {
+    console.log('Saving task with properties:', properties);
+    
+    const response = await fetch(`${API_BASE}/update-task`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: taskId,
+        properties: properties
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ Task updated successfully:', result);
+    
+    // Update the cache with new data
+    const updatedTask = allTasks.find(t => t.id === taskId);
+    if (updatedTask) {
+      updatedTask.text = title;
+      updatedTask.status = status || updatedTask.status;
+    }
+    
+    // Refresh the current view
+    displayCurrentView();
+    
+    // Close modal
+    closeTaskModal();
+    
+    // Show success message
+    alert('Task updated successfully!');
+    
+  } catch (error) {
+    console.error('Error updating task:', error);
+    alert('Failed to update task. Please try again.');
+  }
+}
+
+// Cancel task editing
+function cancelTaskEdit() {
+  console.log('❌ Cancel edit clicked');
+  
+  // Close modal and reopen to reset form
+  const modal = document.getElementById('task-modal');
+  const taskId = modal.dataset.taskId;
+  
+  closeTaskModal();
+  
+  // Reopen with original data
+  if (taskId) {
+    const cachedDetails = getCachedTaskDetails(taskId);
+    if (cachedDetails) {
+      openTaskDetails(taskId, cachedDetails.properties.Name?.displayValue || 'Task');
+    }
+  }
 }
 
 // Fallback function to fetch from API when cache is empty
