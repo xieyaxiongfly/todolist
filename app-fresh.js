@@ -1897,31 +1897,22 @@ function loadUpcomingFilterPreference() {
   // Button will be set when upcoming view is first displayed
 }
 
-// Task Details Modal Functions
+// Modern Task Details Modal Functions
 function openTaskDetails(taskId, taskTitle) {
   console.log('🔍 openTaskDetails called with:', { taskId, taskTitle });
   
-  // Check if elements exist
+  // Check if modal exists
   const modal = document.getElementById('task-modal');
-  const modalTitle = document.getElementById('modal-title');
-  const modalBody = document.getElementById('modal-body');
   
-  console.log('📋 Modal elements found:', {
-    modal: !!modal,
-    modalTitle: !!modalTitle,
-    modalBody: !!modalBody
-  });
-  
-  if (!modal || !modalTitle || !modalBody) {
-    console.error('❌ Modal elements not found');
-    alert('Error: Modal elements not found. Please refresh the page.');
+  if (!modal) {
+    console.error('❌ Modal not found');
+    alert('Error: Modal not found. Please refresh the page.');
     return;
   }
   
   // Show modal immediately
-  console.log('✅ Showing modal...');
-  modal.classList.add('show');
-  modalTitle.textContent = taskTitle || 'Task Details';
+  console.log('✅ Showing modern modal...');
+  modal.style.display = 'block';
   
   // Try to get cached data first
   const cachedDetails = getCachedTaskDetails(taskId);
@@ -1929,18 +1920,94 @@ function openTaskDetails(taskId, taskTitle) {
   
   if (cachedDetails) {
     console.log('✅ Using cached data for task:', taskId);
-    displayTaskDetails(cachedDetails);
+    displayModernTaskDetails(cachedDetails);
   } else {
     console.log('⚠️ No cached data found, fetching from API...');
-    modalBody.innerHTML = '<div class="loading">Loading task details...</div>';
+    setModalLoading();
     
     // Fallback to API if no cached data
-    fetchTaskDetailsFromAPI(taskId, taskTitle, modalBody);
+    fetchTaskDetailsFromAPI(taskId, taskTitle);
   }
 }
 
+// Set modal to loading state
+function setModalLoading() {
+  const titleInput = document.getElementById('modal-task-title');
+  const descriptionInput = document.getElementById('modal-task-description');
+  
+  if (titleInput) titleInput.value = 'Loading...';
+  if (descriptionInput) descriptionInput.value = 'Loading task details...';
+}
+
+// Display task details in modern modal
+function displayModernTaskDetails(taskDetails) {
+  console.log('🎨 Displaying modern task details:', taskDetails);
+  
+  // Update task title
+  const titleInput = document.getElementById('modal-task-title');
+  const checkbox = document.getElementById('modal-task-checkbox');
+  
+  if (titleInput && taskDetails.properties.Name) {
+    titleInput.value = taskDetails.properties.Name.displayValue || 'Untitled Task';
+  }
+  
+  if (checkbox) {
+    checkbox.checked = taskDetails.properties.Status?.displayValue === 'Done';
+  }
+  
+  // Update description
+  const descriptionInput = document.getElementById('modal-task-description');
+  if (descriptionInput && taskDetails.properties.Description) {
+    descriptionInput.value = taskDetails.properties.Description.displayValue || '';
+  }
+  
+  // Update due date
+  const dateInput = document.getElementById('modal-task-date');
+  if (dateInput && taskDetails.properties['Due Date']) {
+    const dueDate = taskDetails.properties['Due Date'].value?.start;
+    if (dueDate) {
+      dateInput.value = dueDate.split('T')[0]; // Extract date part
+    }
+  }
+  
+  // Update priority
+  const prioritySelect = document.getElementById('modal-task-priority');
+  if (prioritySelect && taskDetails.properties.Priority) {
+    const priority = taskDetails.properties.Priority.displayValue;
+    prioritySelect.value = priority || '';
+  }
+  
+  // Update location
+  const locationInput = document.getElementById('modal-task-location');
+  if (locationInput && taskDetails.properties.Location) {
+    locationInput.value = taskDetails.properties.Location.displayValue || '';
+  }
+  
+  // Store task ID for later use
+  modal.dataset.taskId = taskDetails.id;
+}
+
+// Toggle task completion from modal
+function toggleTaskCompletion() {
+  const checkbox = document.getElementById('modal-task-checkbox');
+  const modal = document.getElementById('task-modal');
+  const taskId = modal.dataset.taskId;
+  
+  if (!taskId) return;
+  
+  // Update the task status
+  // This could trigger the existing toggle functionality
+  console.log('🔄 Toggling task completion for:', taskId, 'to:', checkbox.checked);
+}
+
+// Add subtask functionality
+function addSubtask() {
+  console.log('➕ Add subtask clicked');
+  // Placeholder for subtask functionality
+}
+
 // Fallback function to fetch from API when cache is empty
-async function fetchTaskDetailsFromAPI(taskId, taskTitle, modalBody) {
+async function fetchTaskDetailsFromAPI(taskId, taskTitle) {
   try {
     console.log(`Fetching details for task ${taskId} from API`);
     
@@ -2240,7 +2307,7 @@ function formatPropertyValue(propertyData) {
 // Close task details modal
 function closeTaskModal() {
   const modal = document.getElementById('task-modal');
-  modal.classList.remove('show');
+  modal.style.display = 'none';
 }
 
 // Close modals when clicking outside

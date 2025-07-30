@@ -133,21 +133,124 @@
     </div>
   </div>
 
-  <!-- Task Details Modal (keep for task details) -->
-  <div id="task-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modal-title">Task Details</h2>
-        <span class="close-modal" onclick="closeTaskModal()">&times;</span>
+  <!-- Modern Task Details Modal (todo.png style) -->
+  <div id="task-modal" class="modern-modal">
+    <div class="modern-modal-content">
+      <!-- Left Panel - Task Details -->
+      <div class="modal-left-panel">
+        <!-- Task Title Area -->
+        <div class="task-title-section">
+          <div class="task-checkbox">
+            <input type="checkbox" id="modal-task-checkbox" onchange="toggleTaskCompletion()">
+          </div>
+          <div class="task-title-input">
+            <input type="text" id="modal-task-title" class="title-input" readonly>
+          </div>
+          <button class="close-modal-btn" onclick="closeTaskModal()">×</button>
+        </div>
+
+        <!-- Description Section -->
+        <div class="description-section">
+          <div class="section-header">
+            <span class="section-icon">📝</span>
+            <span class="section-label">Description</span>
+          </div>
+          <textarea id="modal-task-description" class="description-input" placeholder="Add description..." readonly></textarea>
+        </div>
+
+        <!-- Sub-tasks Section -->
+        <div class="subtasks-section">
+          <button class="add-subtask-btn" onclick="addSubtask()">
+            <span class="add-icon">+</span>
+            <span>Add sub-task</span>
+          </button>
+          <div id="subtasks-list"></div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section">
+          <div class="comment-input-area">
+            <div class="user-avatar">👤</div>
+            <input type="text" class="comment-input" placeholder="Comment">
+            <button class="attach-btn">📎</button>
+          </div>
+        </div>
       </div>
-      <div class="modal-body" id="modal-body">
-        <div class="loading">Loading task details...</div>
+
+      <!-- Right Panel - Properties -->
+      <div class="modal-right-panel">
+        <!-- Project Section -->
+        <div class="property-section">
+          <div class="property-label">Project</div>
+          <div class="property-value">
+            <span class="property-icon">📥</span>
+            <span id="modal-task-project">Inbox</span>
+          </div>
+        </div>
+
+        <!-- Date Section -->
+        <div class="property-section">
+          <div class="property-label">Date</div>
+          <div class="property-value">
+            <span class="property-icon">📅</span>
+            <input type="date" id="modal-task-date" class="date-input" readonly>
+          </div>
+        </div>
+
+        <!-- Deadline Section -->
+        <div class="property-section">
+          <div class="property-label">Deadline 🔥</div>
+          <div class="property-value">
+            <input type="datetime-local" id="modal-task-deadline" class="datetime-input" readonly>
+            <button class="calendar-btn">📅</button>
+          </div>
+        </div>
+
+        <!-- Priority Section -->
+        <div class="property-section">
+          <div class="property-label">Priority</div>
+          <div class="property-value">
+            <select id="modal-task-priority" class="priority-select" disabled>
+              <option value="">No Priority</option>
+              <option value="P1">🔴 P1</option>
+              <option value="P2">🟡 P2</option>
+              <option value="P3">🔵 P3</option>
+              <option value="P4">⚪ P4</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Labels Section -->
+        <div class="property-section">
+          <div class="property-label">Labels</div>
+          <div class="property-value">
+            <button class="add-label-btn">+</button>
+          </div>
+        </div>
+
+        <!-- Reminders Section -->
+        <div class="property-section">
+          <div class="property-label">Reminders</div>
+          <div class="property-value">
+            <button class="add-reminder-btn">+</button>
+          </div>
+        </div>
+
+        <!-- Location Section -->
+        <div class="property-section">
+          <div class="property-label">Location 🔥</div>
+          <div class="property-value">
+            <input type="text" id="modal-task-location" class="location-input" placeholder="Add location..." readonly>
+            <button class="location-btn">📍</button>
+          </div>
+        </div>
       </div>
-      <div class="modal-footer">
-        <button onclick="editTask()" class="btn-primary" id="edit-task-btn" style="display: none;">✏️ Edit Task</button>
-        <button onclick="saveTaskChanges()" class="btn-primary" id="save-task-btn" style="display: none;">💾 Save Changes</button>
-        <button onclick="cancelTaskEdit()" class="btn-secondary" id="cancel-edit-btn" style="display: none;">Cancel</button>
-        <button onclick="closeTaskModal()" class="btn-secondary" id="close-modal-btn">Close</button>
+
+      <!-- Action Buttons -->
+      <div class="modal-actions">
+        <button onclick="editTask()" class="btn-edit" id="edit-task-btn">✏️ Edit</button>
+        <button onclick="saveTaskChanges()" class="btn-save" id="save-task-btn" style="display: none;">💾 Save</button>
+        <button onclick="cancelTaskEdit()" class="btn-cancel" id="cancel-edit-btn" style="display: none;">Cancel</button>
       </div>
     </div>
   </div>

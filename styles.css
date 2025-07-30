@@ -1764,6 +1764,394 @@ body.dark-mode .calendar-task-more {
   color: #a0aec0;
 }
 
+/* Modern Task Modal Styling (todo.png inspired) */
+.modern-modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+.modern-modal-content {
+  position: relative;
+  background: #2d3748;
+  margin: 2% auto;
+  width: 90%;
+  max-width: 1000px;
+  height: 90vh;
+  border-radius: 12px;
+  display: flex;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Left Panel */
+.modal-left-panel {
+  flex: 2;
+  padding: 24px;
+  background: #2d3748;
+  border-right: 1px solid #4a5568;
+  overflow-y: auto;
+}
+
+/* Task Title Section */
+.task-title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.task-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #718096;
+  background: transparent;
+  cursor: pointer;
+}
+
+.task-checkbox input[type="checkbox"]:checked {
+  background: #48bb78;
+  border-color: #48bb78;
+}
+
+.task-title-input {
+  flex: 1;
+}
+
+.title-input {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 24px;
+  font-weight: 500;
+  width: 100%;
+  padding: 8px 0;
+  outline: none;
+}
+
+.title-input:focus {
+  color: #90cdf4;
+}
+
+.close-modal-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: transparent;
+  border: none;
+  color: #a0aec0;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.close-modal-btn:hover {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+/* Description Section */
+.description-section {
+  margin-bottom: 32px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #a0aec0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.section-icon {
+  font-size: 16px;
+}
+
+.description-input {
+  width: 100%;
+  min-height: 80px;
+  background: transparent;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 12px;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+}
+
+.description-input:focus {
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+}
+
+/* Sub-tasks Section */
+.subtasks-section {
+  margin-bottom: 32px;
+}
+
+.add-subtask-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.add-subtask-btn:hover {
+  color: #e2e8f0;
+}
+
+.add-icon {
+  font-size: 16px;
+  color: #63b3ed;
+}
+
+/* Comments Section */
+.comments-section {
+  margin-top: auto;
+}
+
+.comment-input-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1a202c;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #4a5568;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.comment-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  outline: none;
+  font-size: 14px;
+}
+
+.comment-input::placeholder {
+  color: #718096;
+}
+
+.attach-btn {
+  background: transparent;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.attach-btn:hover {
+  color: #e2e8f0;
+}
+
+/* Right Panel */
+.modal-right-panel {
+  flex: 1;
+  padding: 24px;
+  background: #1a202c;
+  overflow-y: auto;
+}
+
+/* Property Sections */
+.property-section {
+  margin-bottom: 24px;
+}
+
+.property-label {
+  color: #a0aec0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.property-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #2d3748;
+  border-radius: 6px;
+  padding: 10px 12px;
+  border: 1px solid #4a5568;
+}
+
+.property-icon {
+  font-size: 16px;
+  color: #63b3ed;
+}
+
+.date-input,
+.datetime-input,
+.location-input {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+}
+
+.priority-select {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+}
+
+.priority-select option {
+  background: #2d3748;
+  color: #e2e8f0;
+}
+
+.calendar-btn,
+.location-btn {
+  background: transparent;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+}
+
+.calendar-btn:hover,
+.location-btn:hover {
+  color: #63b3ed;
+}
+
+.add-label-btn,
+.add-reminder-btn {
+  background: transparent;
+  border: 1px dashed #4a5568;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 18px;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-label-btn:hover,
+.add-reminder-btn:hover {
+  border-color: #63b3ed;
+  color: #63b3ed;
+}
+
+/* Action Buttons */
+.modal-actions {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  gap: 12px;
+}
+
+.btn-edit,
+.btn-save,
+.btn-cancel {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-edit {
+  background: #63b3ed;
+  color: #1a202c;
+}
+
+.btn-edit:hover {
+  background: #4299e1;
+}
+
+.btn-save {
+  background: #48bb78;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #38a169;
+}
+
+.btn-cancel {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+.btn-cancel:hover {
+  background: #2d3748;
+}
+
+/* Light mode overrides */
+body:not(.dark-mode) .modern-modal-content {
+  background: #ffffff;
+}
+
+body:not(.dark-mode) .modal-left-panel {
+  background: #ffffff;
+  border-right-color: #e2e8f0;
+}
+
+body:not(.dark-mode) .modal-right-panel {
+  background: #f7fafc;
+}
+
+body:not(.dark-mode) .title-input,
+body:not(.dark-mode) .description-input,
+body:not(.dark-mode) .comment-input,
+body:not(.dark-mode) .date-input,
+body:not(.dark-mode) .datetime-input,
+body:not(.dark-mode) .location-input,
+body:not(.dark-mode) .priority-select {
+  color: #2d3748;
+}
+
+body:not(.dark-mode) .property-value {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+body:not(.dark-mode) .comment-input-area {
+  background: #edf2f7;
+}
+
 /* Drag and Drop Styles */
 .board-task[draggable="true"] {
   cursor: grab;
