@@ -1933,10 +1933,10 @@ function openTaskDetails(taskId, taskTitle) {
 // Set modal to loading state
 function setModalLoading() {
   const titleInput = document.getElementById('modal-task-title');
-  const detailsContainer = document.getElementById('modal-task-details');
+  const detailsTextarea = document.getElementById('modal-task-details');
   
   if (titleInput) titleInput.value = 'Loading...';
-  if (detailsContainer) detailsContainer.innerHTML = '<div class="loading">Loading task details...</div>';
+  if (detailsTextarea) detailsTextarea.value = 'Loading task details...';
 }
 
 // Display task details in modern modal
@@ -1961,10 +1961,11 @@ function displayModernTaskDetails(taskDetails) {
     checkbox.checked = status === 'Done' || status === 'Completed';
   }
   
-  // Update details section with database information
-  const detailsContainer = document.getElementById('modal-task-details');
-  if (detailsContainer) {
-    displayTaskDetailsSection(taskDetails, detailsContainer);
+  // Update details section with actual Details attribute from database
+  const detailsTextarea = document.getElementById('modal-task-details');
+  if (detailsTextarea) {
+    const detailsContent = taskDetails.properties.Details?.displayValue || '';
+    detailsTextarea.value = detailsContent;
   }
   
   // Update right panel with all database attributes
@@ -1975,34 +1976,6 @@ function displayModernTaskDetails(taskDetails) {
   modal.taskDetails = taskDetails;
 }
 
-// Display task details in the Details section
-function displayTaskDetailsSection(taskDetails, container) {
-  console.log('📋 Displaying task details section');
-  
-  let detailsHtml = '';
-  
-  // Show key database properties in the details section
-  const importantProps = ['Description', 'Status', 'Priority', 'Due Date', 'Category', 'Tags', 'Location', 'Estimated Hours'];
-  
-  importantProps.forEach(propName => {
-    const prop = taskDetails.properties[propName];
-    if (prop && (prop.displayValue || prop.displayValue === 0)) {
-      detailsHtml += `
-        <div class="details-item">
-          <div class="details-label">${propName}:</div>
-          <div class="details-value">${prop.displayValue}</div>
-        </div>
-      `;
-    }
-  });
-  
-  // If no details found, show a message
-  if (!detailsHtml) {
-    detailsHtml = '<div class="details-item"><div class="details-value empty">No additional details available</div></div>';
-  }
-  
-  container.innerHTML = detailsHtml;
-}
 
 // Update the right panel with all database attributes
 function updateModalRightPanel(taskDetails) {
@@ -2099,6 +2072,7 @@ function editTask() {
   // Enable all form elements for editing
   const formElements = [
     'modal-task-title',
+    'modal-task-details',
     'modal-task-status',
     'modal-task-date',
     'modal-task-priority',
@@ -2155,6 +2129,13 @@ async function saveTaskChanges() {
   if (title) {
     properties['Name'] = title;
     properties['Name_type'] = 'title';
+  }
+  
+  // Details content
+  const details = document.getElementById('modal-task-details').value.trim();
+  if (details) {
+    properties['Details'] = details;
+    properties['Details_type'] = 'rich_text';
   }
   
   // Status
@@ -2256,6 +2237,7 @@ async function saveTaskChanges() {
 function resetFormStyling() {
   const formElements = [
     'modal-task-title',
+    'modal-task-details',
     'modal-task-status',
     'modal-task-date',
     'modal-task-priority',

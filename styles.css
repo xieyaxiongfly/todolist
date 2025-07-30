@@ -1878,44 +1878,28 @@ body.dark-mode .calendar-task-more {
   font-size: 16px;
 }
 
-.details-content {
+.details-textarea {
+  width: 100%;
+  min-height: 120px;
+  max-height: 200px;
   background: rgba(26, 32, 44, 0.5);
   border: 1px solid #4a5568;
   border-radius: 8px;
   padding: 16px;
   color: #e2e8f0;
   font-size: 14px;
-  max-height: 200px;
-  overflow-y: auto;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
 }
 
-.details-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(74, 85, 104, 0.3);
+.details-textarea:focus {
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
 }
 
-.details-item:last-child {
-  border-bottom: none;
-}
-
-.details-label {
-  color: #a0aec0;
-  font-weight: 500;
-  min-width: 120px;
-}
-
-.details-value {
-  color: #e2e8f0;
-  text-align: right;
-  flex: 1;
-}
-
-.details-value.empty {
+.details-textarea::placeholder {
   color: #718096;
-  font-style: italic;
 }
 
 /* Sub-tasks Section */
